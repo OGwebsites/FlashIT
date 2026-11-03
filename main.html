@@ -467,8 +467,8 @@
         <div class="max-w-md mx-auto mt-3">
             <div class="relative">
                 <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ios-gray"></i>
-                <input type="text" id="searchInput" placeholder="Search vocabulary..." class="w-full pl-9 pr-8 py-2 bg-slate-200/70 dark:bg-slate-800/80 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue transition-all placeholder:text-ios-gray">
-                <button id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-ios-gray hover:text-slate-700 dark:hover:text-slate-200">
+                <input type="search" id="searchInput" name="vocabulary-search" autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" placeholder="Search words, meanings, or part of speech..." class="w-full pl-9 pr-8 py-2 bg-slate-200/70 dark:bg-slate-800/80 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue transition-all placeholder:text-ios-gray">
+                <button type="button" id="clearSearchBtn" aria-label="Clear search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-ios-gray hover:text-slate-700 dark:hover:text-slate-200">
                     <i data-lucide="x-circle" class="w-4 h-4 fill-current"></i>
                 </button>
             </div>
@@ -6966,22 +6966,37 @@
             }
         }, { passive: true });
 
-        // Search
-        searchInput.addEventListener('input', (e) => {
-            state.searchQuery = e.target.value.trim();
-            if (state.searchQuery.length > 0) {
-                clearSearchBtn.classList.remove('hidden');
-            } else {
-                clearSearchBtn.classList.add('hidden');
-            }
+        // Search: match words, definitions, and parts of speech (case/diacritic insensitive).
+        function normalizeSearchText(value) {
+            return String(value ?? '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLocaleLowerCase()
+                .replace(/[’‘]/g, "'")
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function updateSearch() {
+            state.searchQuery = normalizeSearchText(searchInput.value);
+            clearSearchBtn.classList.toggle('hidden', !searchInput.value.length);
             filterWords();
+        }
+
+        searchInput.addEventListener('input', updateSearch);
+        searchInput.addEventListener('search', updateSearch); // Handles the native search-field clear control.
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && searchInput.value) {
+                e.preventDefault();
+                searchInput.value = '';
+                updateSearch();
+            }
         });
 
         clearSearchBtn.addEventListener('click', () => {
             searchInput.value = '';
-            state.searchQuery = '';
-            clearSearchBtn.classList.add('hidden');
-            filterWords();
+            updateSearch();
+            searchInput.focus();
         });
 
         // Category Filter Listener
@@ -6999,10 +7014,8 @@
                 if (state.filterMode === 'mastered' && !isMastered) return false;
                 
                 if (state.searchQuery) {
-                    const q = state.searchQuery.toLowerCase();
-                    return item.word.toLowerCase().includes(q) || 
-                           item.def.toLowerCase().includes(q) || 
-                           item.pos.toLowerCase().includes(q);
+                    const searchableText = normalizeSearchText([item.word, item.def, item.pos].join(' '));
+                    return searchableText.includes(state.searchQuery);
                 }
                 
                 return true;
