@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexicon Flashcards</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        ios: {
+                            blue: '#007AFF',
+                            gray: '#8E8E93',
+                            gray2: '#AEAEB2',
+                            gray3: '#C7C7CC',
+                            gray4: '#D1D1D6',
+                            gray5: '#E5E5EA',
+                            gray6: '#F2F2F7',
+                            cardLight: '#FFFFFF',
+                            cardDark: '#1C1C1E',
+                            bgDark: '#000000',
+                            green: '#34C759'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS for iOS Flip Animation and Mobile Layout Touch Polish -->
+    <style>
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        /* Mobile notch spacing support */
+        .pt-safe {
+            padding-top: env(safe-area-inset-top, 1rem);
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 1.25rem);
+        }
+        /* Hide scrollbars for smooth app feel */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+    <style id="flashit-redesign">
+      :root { color-scheme: light; }
+      html, body { min-height: 100%; }
+      body { background: #f5f7fb !important; }
+      body.dark { background: #090d18 !important; }
+      header { border-color: rgba(148,163,184,.18) !important; }
+      header > div, header > div + div { max-width: 1180px !important; }
+      header h1 { letter-spacing: -.045em !important; }
+      main { max-width: 1180px !important; padding: 26px 28px 40px !important; gap: 24px; }
+      #masteryCountText, #masteryPercentText { font-size: 13px; }
+      #flashcardSection { width: min(100%, 920px); margin: auto; padding: 18px 0 28px; }
+      #cardWrapper { width: 100%; }
+      #cardInner {
+        height: clamp(390px, 56vh, 570px) !important;
+        border-radius: 30px !important;
+        box-shadow: 0 24px 70px rgba(15,23,42,.12) !important;
+      }
+      #cardInner > div { padding: clamp(24px, 5vw, 54px) !important; }
+      #cardWordFront { font-size: clamp(2.5rem, 7vw, 5rem) !important; letter-spacing: -.055em !important; }
+      #cardDefBack { font-size: clamp(1.25rem, 3vw, 2rem) !important; max-height: 55% !important; }
+      #cardBottomControls, #flashcardSection > .flex { max-width: 920px; }
+      #shuffleBtn, #prevCardBtn, #nextCardBtn, #browseWordsBtn {
+        min-height: 50px; border-radius: 16px; font-size: 13px;
+      }
+      #progressPanel { max-width: 920px; width: 100%; margin: 0 auto; }
+      #listViewSection {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+        align-content: start; gap: 14px !important;
+      }
+      #listViewSection > div { padding: 20px !important; border-radius: 20px !important; }
+      #listViewSection h3 { font-size: 16px !important; line-height: 1.4; }
+      #listViewSection p { font-size: 13px !important; line-height: 1.65 !important; }
+      nav { border-color: rgba(148,163,184,.18) !important; }
+      #shortcutsModal > div { max-width: 390px; }
+      button, select, input { -webkit-tap-highlight-color: transparent; }
+      #quizAnswers button { text-align:left; width:100%; padding:15px 17px; border:1px solid rgba(148,163,184,.28); border-radius:15px; background:rgba(148,163,184,.07); color:inherit; line-height:1.5; transition:background .15s,border-color .15s; }
+      #quizAnswers button:disabled { cursor:default; opacity:1; }
+      #quizAnswers button.quiz-correct { border-color:#16a34a; background:rgba(22,163,74,.13); }
+      #quizAnswers button.quiz-incorrect { border-color:#e11d48; background:rgba(225,29,72,.12); }
+      button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 3px solid rgba(0,122,255,.35); outline-offset: 2px;
+      }
+      /* Immersive study mode: the flashcard becomes the whole workspace. */
+      body.study-mode { height: 100dvh; min-height: 100dvh; overflow: hidden !important; }
+      body.study-mode header { flex: 0 0 auto; padding: 10px 24px !important; background: rgba(245,247,251,.88) !important; }
+      body.dark.study-mode header { background: rgba(9,13,24,.88) !important; }
+      body.study-mode header > div:first-child { max-width: 1180px !important; }
+      body.study-mode header > div:nth-child(2),
+      body.study-mode header > div:nth-child(3) { display: none !important; }
+      body.study-mode main {
+        height: calc(100dvh - 68px); min-height: 0; overflow: auto;
+        padding: 16px 28px 28px !important; margin: 0 auto !important;
+        justify-content: center; gap: 12px;
+      }
+      body.study-mode #progressPanel { max-width: 920px; }
+      body.study-mode #flashcardSection { padding: 4px 0 0; margin: auto; }
+      body.study-mode #cardInner { height: min(64vh, 620px) !important; min-height: 360px; }
+      body.study-mode nav { display: none !important; }
+      body.study-mode #browseWordsBtn { display: inline-flex !important; }
+      @media (max-width: 640px) {
+        main { padding: 16px 16px 28px !important; }
+        #cardInner { height: min(58vh, 490px) !important; min-height: 340px; border-radius: 24px !important; }
+        #cardInner > div { padding: 22px !important; }
+        body.study-mode header { padding: 8px 16px !important; }
+        body.study-mode main { height: calc(100dvh - 58px); padding: 10px 16px 20px !important; }
+        body.study-mode #cardInner { height: min(68vh, 590px) !important; }
+        #browseWordsBtn { padding: 0 12px !important; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      }
+    </style>
+
+
+    <style id="flashit-mobile-first">
+      /* Phone-first layout */
+      @media (max-width: 640px) {
+        html, body { width: 100%; min-height: 100%; overflow-x: hidden; }
+        body { min-height: 100svh; }
+        header {
+          padding: max(env(safe-area-inset-top), 8px) 14px 12px !important;
+          backdrop-filter: blur(18px);
+        }
+        header > div:first-child { min-height: 38px; }
+        header h1 { font-size: 19px !important; }
+        #searchInput { min-height: 44px; font-size: 16px !important; }
+        header > div:nth-child(3) { gap: 8px !important; }
+        #categorySelect { min-height: 40px; max-width: 44%; padding-left: 9px !important; padding-right: 8px !important; }
+        .filter-btn { min-height: 38px; font-size: 12px; }
+        main {
+          width: 100% !important;
+          max-width: none !important;
+          padding: 14px 14px calc(82px + env(safe-area-inset-bottom)) !important;
+          gap: 14px !important;
+          margin-bottom: 0 !important;
+        }
+        #progressPanel { padding: 12px !important; border-radius: 17px !important; }
+        #flashcardSection {
+          width: 100%;
+          padding: 4px 0 10px !important;
+          gap: 0;
+        }
+        #cardWrapper { touch-action: pan-y; }
+        #cardInner {
+          height: clamp(300px, 49svh, 440px) !important;
+          min-height: 0 !important;
+          border-radius: 24px !important;
+          box-shadow: 0 14px 38px rgba(15,23,42,.10) !important;
+        }
+        #cardInner > div { padding: 18px !important; border-radius: 24px !important; }
+        #cardWordFront { font-size: clamp(2.1rem, 10vw, 3.4rem) !important; overflow-wrap: anywhere; }
+        #cardDefBack { font-size: clamp(1.05rem, 4.8vw, 1.45rem) !important; line-height: 1.5 !important; max-height: 62% !important; }
+        #cardBottomControls { margin-top: 12px !important; gap: 8px !important; }
+        #shuffleBtn { min-height: 48px; padding: 0 12px !important; flex: 1; justify-content: center; }
+        #cardBottomControls > div { gap: 8px !important; }
+        #prevCardBtn, #nextCardBtn { width: 48px; height: 48px; padding: 0 !important; display: inline-flex; align-items: center; justify-content: center; }
+        #browseWordsBtn { min-height: 48px; padding: 0 12px !important; }
+        #listViewSection {
+          grid-template-columns: minmax(0, 1fr) !important;
+          gap: 10px !important;
+          padding: 2px 0 12px !important;
+        }
+        #listViewSection > div { padding: 16px !important; border-radius: 17px !important; }
+        nav { padding-bottom: env(safe-area-inset-bottom) !important; }
+        nav > div { height: 60px !important; }
+        nav button { min-width: 112px; min-height: 52px; }
+        #shortcutsModal { padding: 14px !important; }
+        #shortcutsModal > div { max-height: calc(100svh - 28px); overflow-y: auto; }
+
+        /* Flashcard mode uses the entire phone screen */
+        body.study-mode { height: 100svh; height: 100dvh; overflow: hidden !important; }
+        body.study-mode header {
+          padding: max(env(safe-area-inset-top), 7px) 14px 8px !important;
+          min-height: 48px;
+        }
+        body.study-mode header > div:first-child { min-height: 32px; }
+        body.study-mode main {
+          height: calc(100dvh - 48px - env(safe-area-inset-top)) !important;
+          min-height: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
+          padding: 10px 14px max(14px, env(safe-area-inset-bottom)) !important;
+          margin: 0 !important;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-evenly;
+          gap: 10px !important;
+          overflow: hidden !important;
+        }
+        body.study-mode #progressPanel { flex: 0 0 auto; padding: 10px 12px !important; }
+        body.study-mode #flashcardSection {
+          flex: 1 1 auto;
+          min-height: 0;
+          width: 100%;
+          padding: 4px 0 !important;
+          margin: 0 !important;
+          justify-content: center;
+        }
+        body.study-mode #cardWrapper { flex: 0 1 auto; min-height: 0; }
+        body.study-mode #cardInner {
+          height: min(62svh, 520px) !important;
+          height: min(62dvh, 520px) !important;
+          min-height: 250px !important;
+          max-height: 100% !important;
+        }
+        body.study-mode #cardBottomControls { flex: 0 0 auto; margin-top: 10px !important; }
+        body.study-mode #browseWordsBtn { display: inline-flex !important; }
+      }
+      @media (max-width: 380px) {
+        #cardWordFront { font-size: clamp(1.9rem, 9vw, 2.6rem) !important; }
+        #cardBottomControls { gap: 6px !important; }
+        #shuffleBtn { font-size: 11px !important; }
+        body.study-mode #cardInner { height: min(58dvh, 430px) !important; }
+      }
+      @media (max-height: 700px) and (max-width: 640px) {
+        body.study-mode main { gap: 6px !important; padding-top: 6px !important; }
+        body.study-mode #progressPanel { padding: 7px 10px !important; }
+        body.study-mode #cardInner { height: min(56dvh, 390px) !important; min-height: 220px !important; }
+      }
+    </style>
+
+</head>
+<body class="bg-ios-gray6 text-slate-900 dark:bg-ios-bgDark dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased transition-colors duration-200 select-none overflow-x-hidden">
+
+    <!-- iOS Styled Header Bar -->
+    <header class="sticky top-0 z-30 bg-ios-gray6/80 dark:bg-ios-bgDark/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/80 pt-safe px-4 pb-3">
+        <div class="max-w-md mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-ios-blue text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                </div>
+                <h1 class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">Lexicon</h1>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                <button id="firebaseAuthBtn" class="px-3 py-2 rounded-full bg-ios-blue text-white text-xs font-semibold hover:opacity-90 transition-opacity">Sign in to sync</button>
+                <span id="firebaseStatus" class="text-[10px] text-ios-gray max-w-[76px] text-right" aria-live="polite">Cloud not connected</span>
+                <button id="themeToggleBtn" title="Toggle Dark/Light Mode" class="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800 active:scale-95 transition-all">
+                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+                <button id="shortcutsModalBtn" title="Shortcuts" class="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800 active:scale-95 transition-all">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- iOS Native Search Bar -->
+        <div class="max-w-md mx-auto mt-3">
+            <div class="relative">
+                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ios-gray"></i>
+                <input type="text" id="searchInput" placeholder="Search vocabulary..." class="w-full pl-9 pr-8 py-2 bg-slate-200/70 dark:bg-slate-800/80 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue transition-all placeholder:text-ios-gray">
+                <button id="clearSearchBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-ios-gray hover:text-slate-700 dark:hover:text-slate-200">
+                    <i data-lucide="x-circle" class="w-4 h-4 fill-current"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Segmented Control & Category Selector -->
+        <div class="max-w-md mx-auto mt-3 flex items-center justify-between gap-2">
+            <!-- Filter Selector (All / Review / Mastered) -->
+            <div class="flex-1 bg-slate-200/70 dark:bg-slate-800/80 p-0.5 rounded-xl flex text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <button data-filter="all" class="filter-btn flex-1 py-1.5 rounded-lg transition-all bg-white dark:bg-ios-cardDark shadow-sm text-slate-900 dark:text-white">All</button>
+                <button data-filter="learning" class="filter-btn flex-1 py-1.5 rounded-lg transition-all">Review</button>
+                <button data-filter="mastered" class="filter-btn flex-1 py-1.5 rounded-lg transition-all">Mastered</button>
+            </div>
+
+            <!-- List Category Switcher -->
+            <select id="categorySelect" class="bg-slate-200/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs font-semibold px-3 py-1.5 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                <option value="all">All Words (Full List)</option>
+                <option value="List A">List A (Core)</option>
+                <option value="List B">List B (Core)</option>
+                <option value="List C">List C (Core)</option>
+                <option value="List D">List D (Phrasal/Chunks)</option>
+                <option value="Section E-Z">Section E - Z</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Main Mobile Content Area -->
+    <main class="flex-1 max-w-md w-full mx-auto px-4 py-4 flex flex-col justify-between mb-16">
+
+        <!-- Progress Card -->
+        <div id="progressPanel" class="bg-white dark:bg-ios-cardDark rounded-2xl p-3.5 shadow-sm border border-slate-100 dark:border-slate-800/80 flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs font-medium text-ios-gray">
+                <span id="masteryCountText">0 / 0 Mastered</span>
+                <span id="masteryPercentText" class="font-bold text-slate-900 dark:text-white">0%</span>
+            </div>
+            <div class="w-full bg-ios-gray6 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="progressBarInner" class="bg-ios-blue h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Dynamic Card / List Container -->
+        <div id="flashcardSection" class="my-auto py-4 flex flex-col items-center">
+            <!-- iOS Flashcard Container -->
+            <div id="cardWrapper" class="w-full perspective-1000 cursor-pointer active:scale-98 transition-transform duration-150">
+                <div id="cardInner" class="w-full h-[380px] relative transform-style-3d transition-transform duration-500 ease-out shadow-xl rounded-3xl border border-slate-200/50 dark:border-slate-800 bg-white dark:bg-ios-cardDark">
+                    
+                    <!-- Card Front Side -->
+                    <div class="absolute inset-0 backface-hidden rounded-3xl p-6 flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span id="cardPosFront" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-ios-gray6 dark:bg-slate-800 text-ios-blue">
+                                pos
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button id="speechBtnFront" title="Audio Pronunciation" class="p-2.5 rounded-full text-ios-blue hover:bg-ios-gray6 dark:hover:bg-slate-800 active:scale-90 transition-all">
+                                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                                </button>
+                                <button id="masteryToggleFront" title="Mark Mastered" class="p-2.5 rounded-full text-slate-300 dark:text-slate-700 hover:text-ios-green active:scale-90 transition-all">
+                                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="text-center my-auto px-2">
+                            <h2 id="cardWordFront" class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                                Word
+                            </h2>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-ios-gray font-medium">
+                            <span id="cardCounter">1 of 1</span>
+                            <span class="flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tap to flip</span>
+                        </div>
+                    </div>
+
+                    <!-- Card Back Side -->
+                    <div class="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl p-6 flex flex-col justify-between bg-slate-900 dark:bg-black text-white">
+                        <div class="flex items-center justify-between">
+                            <span id="cardPosBack" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-800 text-ios-blue">
+                                pos
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button id="speechBtnBack" title="Audio Pronunciation" class="p-2.5 rounded-full text-ios-blue hover:bg-slate-800 active:scale-90 transition-all">
+                                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                                </button>
+                                <button id="masteryToggleBack" title="Mark Mastered" class="p-2.5 rounded-full text-slate-600 hover:text-ios-green active:scale-90 transition-all">
+                                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="text-center my-auto px-2 flex flex-col gap-2">
+                            <h3 id="cardWordBack" class="text-sm font-semibold text-ios-gray">Word</h3>
+                            <p id="cardDefBack" class="text-xl font-medium text-slate-100 leading-snug max-h-[200px] overflow-y-auto no-scrollbar">
+                                Definition...
+                            </p>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-ios-gray font-medium">
+                            <span>Definition</span>
+                            <span class="flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Tap to flip</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Card Bottom Quick Controls -->
+            <div id="cardBottomControls" class="flex items-center justify-between w-full mt-5 gap-3">
+                <button id="browseWordsBtn" title="Exit flashcards and browse the full list" class="hidden items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-ios-cardDark border border-slate-200/50 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs shadow-sm"><i data-lucide="list" class="w-4 h-4 text-ios-blue"></i><span>Full List</span></button>
+                <button id="shuffleBtn" class="px-4 py-2.5 rounded-2xl bg-white dark:bg-ios-cardDark border border-slate-200/50 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-semibold text-xs active:scale-95 transition-all shadow-sm flex items-center gap-2">
+                    <i data-lucide="shuffle" class="w-4 h-4 text-ios-blue"></i>
+                    <span>Shuffle</span>
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <button id="prevCardBtn" class="p-3 rounded-2xl bg-white dark:bg-ios-cardDark border border-slate-200/50 dark:border-slate-800 text-slate-800 dark:text-slate-200 active:scale-95 transition-all shadow-sm">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    </button>
+                    <button id="nextCardBtn" class="p-3 rounded-2xl bg-ios-blue text-white active:scale-95 transition-all shadow-sm">
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid/List View Section -->
+        <div id="listViewSection" class="hidden flex-1 flex flex-col gap-3 py-2">
+            <!-- Dynamic list items -->
+        </div>
+
+        <!-- Empty State Container -->
+        <div id="emptyState" class="hidden flex-1 flex flex-col items-center justify-center py-12 text-center">
+            <div class="w-14 h-14 rounded-full bg-slate-200/70 dark:bg-slate-800 text-ios-gray flex items-center justify-center mb-3">
+                <i data-lucide="search-x" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">No words found</h3>
+            <p class="text-xs text-ios-gray mt-1">Try resetting search or filters.</p>
+        </div>
+
+
+    <!-- Multiple-choice quiz -->
+    <section id="quizSection" class="hidden w-full max-w-3xl mx-auto pb-10">
+      <div class="bg-white dark:bg-ios-cardDark border border-slate-200/70 dark:border-slate-800 rounded-3xl p-5 sm:p-7 shadow-sm">
+        <div class="flex items-center justify-between gap-3 mb-5">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-ios-blue">Flashit quiz</p>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Choose the correct meaning</h2>
+          </div>
+          <button id="exitQuizBtn" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-semibold">Exit quiz</button>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mb-6">
+          <div class="rounded-xl bg-slate-50 dark:bg-slate-800/70 p-3 text-center"><div id="quizCorrect" class="text-xl font-bold text-emerald-600">0</div><div class="text-xs text-ios-gray">Correct</div></div>
+          <div class="rounded-xl bg-slate-50 dark:bg-slate-800/70 p-3 text-center"><div id="quizWrong" class="text-xl font-bold text-rose-600">0</div><div class="text-xs text-ios-gray">Wrong</div></div>
+          <div class="rounded-xl bg-slate-50 dark:bg-slate-800/70 p-3 text-center"><div id="quizAccuracy" class="text-xl font-bold text-ios-blue">0%</div><div class="text-xs text-ios-gray">Accuracy</div></div>
+        </div>
+        <p id="quizQuestionCount" class="text-xs text-ios-gray mb-2">Question 1</p>
+        <h3 id="quizWord" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-6"></h3>
+        <div id="quizAnswers" class="grid gap-3"></div>
+        <div id="quizFeedback" class="mt-4 min-h-6 text-sm font-semibold" aria-live="polite"></div>
+        <div class="flex flex-wrap gap-3 mt-5">
+          <button id="nextQuestionBtn" disabled class="flex-1 py-3 rounded-xl bg-ios-blue text-white font-bold disabled:opacity-40">Next question</button>
+          <button id="restartQuizBtn" class="px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-semibold">Restart</button>
+        </div>
+        <p class="text-xs text-ios-gray mt-4">Questions use the vocabulary currently matching your search and filters.</p>
+      </div>
+    </section>
+    <div id="quizLaunchWrap" class="max-w-3xl mx-auto w-full flex justify-center pb-5">
+      <button id="startQuizBtn" class="px-6 py-3 rounded-2xl bg-ios-blue text-white font-bold shadow-sm">Start multiple-choice quiz</button>
+    </div>
+    </main>
+
+    <!-- iOS Styled Bottom Navigation Bar -->
+    <nav class="fixed bottom-0 inset-x-0 z-30 bg-ios-gray6/80 dark:bg-ios-bgDark/80 backdrop-blur-xl border-t border-slate-200/60 dark:border-slate-800/80 pb-safe">
+        <div class="max-w-md mx-auto flex items-center justify-around h-14 px-4">
+            <button id="cardViewBtn" class="flex flex-col items-center justify-center gap-1 text-ios-blue">
+                <i data-lucide="square-stack" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Flashcards</span>
+            </button>
+            <button id="listViewBtn" class="flex flex-col items-center justify-center gap-1 text-ios-gray hover:text-slate-900 dark:hover:text-white">
+                <i data-lucide="list font-medium" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Full List</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Keyboard Shortcuts / Info Modal -->
+    <div id="shortcutsModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-ios-cardDark rounded-3xl max-w-xs w-full p-6 shadow-2xl flex flex-col gap-4 text-center">
+            <div class="w-12 h-12 bg-ios-blue/10 text-ios-blue rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="smartphone" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white">Mobile Gestures</h3>
+            <div class="text-xs text-ios-gray space-y-2 text-left bg-ios-gray6 dark:bg-slate-800/60 p-3 rounded-2xl">
+                <p>• <b>Tap card</b> to flip front/back</p>
+                <p>• <b>Swipe Left/Right</b> to flip through cards</p>
+                <p>• <b>Volume Icon</b> for English audio</p>
+                <p>• <b>Checkmark</b> to mark word as mastered</p>
+            </div>
+            <button id="closeShortcutsBtn" class="w-full py-2.5 bg-ios-blue text-white rounded-xl font-bold text-sm active:scale-95 transition-transform">
+                Done
+            </button>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic -->
+    <script>
+        // Master Vocabulary Dataset (Complete entries from all uploaded sheet pages)
+        const vocabularyData = [
+            // --- PAGE 1 (Image 1: double to interrupt) ---
+            { id: 1, category: "List C", word: "double", pos: "v, adv", def: "Become twice as much; two-fold" },
+            { id: 2, category: "List C", word: "economical", pos: "adj", def: "Giving good value or service in relation to the amount of money or time spent" },
+            { id: 3, category: "List C", word: "editor", pos: "n", def: "A person who determines the final content of a newspaper, magazine, or book" },
+            { id: 4, category: "List C", word: "either way", pos: "phrase", def: "Which ever of two possibilities happens; in any case" },
+            { id: 5, category: "List C", word: "element", pos: "n", def: "An essential or characteristic part of something" },
+            { id: 6, category: "List C", word: "emerge", pos: "v", def: "Move out of or away from something and come into view" },
+            { id: 7, category: "List C", word: "emotion", pos: "n", def: "A natural instinctive state of mind deriving from one's circumstances or mood" },
+            { id: 8, category: "List C", word: "exception", pos: "n", def: "A person or thing that is excluded from a general statement or does not follow a rule" },
+            { id: 9, category: "List C", word: "exchange", pos: "v", def: "Give something and receive something of the same kind in return" },
+            { id: 10, category: "List C", word: "expected", pos: "adj", def: "Regarded as likely to happen, anticipated" },
+            { id: 11, category: "List C", word: "expedition", pos: "n", def: "A journey undertaken by a group of people with a particular purpose" },
+            { id: 12, category: "List C", word: "expense", pos: "n", def: "The cost required for something; money spent" },
+            { id: 13, category: "List C", word: "export", pos: "n, v", def: "Send goods or services to another country for sale" },
+            { id: 14, category: "List C", word: "expression", pos: "n", def: "A word or phrase used to express a particular concept or feeling" },
+            { id: 15, category: "List C", word: "extend", pos: "v", def: "Make longer or wider, make last" },
+            { id: 16, category: "List C", word: "extreme", pos: "adj", def: "Reaching a high or the highest degree; severe" },
+            { id: 17, category: "List C", word: "farther/further", pos: "adj, adv", def: "At or to a greater distance in space or time" },
+            { id: 18, category: "List C", word: "fed up", pos: "adj", def: "Annoyed, frustrated, or bored with something" },
+            { id: 19, category: "List C", word: "fetch", pos: "v", def: "Go for and bring back someone or something" },
+            { id: 20, category: "List C", word: "final", pos: "n", def: "The last exam, match, or contest in a series" },
+            { id: 21, category: "List C", word: "fit", pos: "adj", def: "Healthy, in good physical shape" },
+            { id: 22, category: "List C", word: "generation", pos: "n", def: "All of the people born and living at about the same time" },
+            { id: 23, category: "List C", word: "genuine", pos: "adj", def: "Truly what something is said to be; authentic" },
+            { id: 24, category: "List C", word: "get rid of sth", pos: "phrase", def: "Dispose of, throw away, or free oneself from something" },
+            { id: 25, category: "List C", word: "get sth wrong", pos: "phrase", def: "Make a mistake about something; miscalculate" },
+            { id: 26, category: "List C", word: "get worse", pos: "phrase", def: "Deteriorate, become more severe or less pleasant" },
+            { id: 27, category: "List C", word: "give away sth or give sth away", pos: "phrase", def: "Hand out something for free or reveal a secret" },
+            { id: 28, category: "List C", word: "go out", pos: "phrase", def: "Leave home for social activity or cease burning/shining" },
+            { id: 29, category: "List C", word: "hidden", pos: "adj", def: "Kept out of sight; concealed" },
+            { id: 30, category: "List C", word: "highlight", pos: "v", def: "Draw attention to or emphasize an important point" },
+            { id: 31, category: "List C", word: "historian", pos: "n", def: "An expert in or student of history" },
+            { id: 32, category: "List C", word: "historic", pos: "adj", def: "Famous or important in history; of great importance" },
+            { id: 33, category: "List C", word: "identical", pos: "adj", def: "Similar or alike in every way; exactly the same" },
+            { id: 34, category: "List C", word: "immigration", pos: "n", def: "The action of coming to live permanently in a foreign country" },
+            { id: 35, category: "List C", word: "import", pos: "v, n", def: "Bring goods or services into a country from abroad" },
+            { id: 36, category: "List C", word: "impress", pos: "v", def: "Make someone feel admiration and respect" },
+            { id: 37, category: "List C", word: "impression", pos: "n", def: "An idea, feeling, or opinion about something formed without conscious thought" },
+            { id: 38, category: "List C", word: "incredible", pos: "adj", def: "Impossible to believe; extraordinary" },
+            { id: 39, category: "List C", word: "indoors", pos: "adv, adj", def: "Inside a building" },
+            { id: 40, category: "List C", word: "infection", pos: "n", def: "The process of infecting or state of being infected by illness" },
+            { id: 41, category: "List C", word: "input", pos: "n", def: "What is put in, taken in, or operated on by any process or system" },
+            { id: 42, category: "List C", word: "inside", pos: "adv", def: "In or into the interior of something; feeling" },
+            { id: 43, category: "List C", word: "interaction", pos: "n", def: "Reciprocal action or influence between people or things" },
+            { id: 44, category: "List C", word: "interpret", pos: "v", def: "Explain the meaning of; translate from another language" },
+            { id: 45, category: "List C", word: "interrupt", pos: "v", def: "Stop speaking or break the continuity of an action" },
+
+            // --- PAGE 2 (Image 2: involvement to part-time) ---
+            { id: 46, category: "List C", word: "involvement", pos: "n", def: "The fact or condition of taking part in something" },
+            { id: 47, category: "List C", word: "issue", pos: "n", def: "An important topic or problem for debate or discussion" },
+            { id: 48, category: "List C", word: "it looks like/as if/as though", pos: "phrase", def: "Appears to be the case based on visual evidence" },
+            { id: 49, category: "List C", word: "jam", pos: "n", def: "A crowded or blocked situation; traffic congestion" },
+            { id: 50, category: "List C", word: "journalist", pos: "n", def: "A person who writes for newspapers, magazines, or news websites" },
+            { id: 51, category: "List C", word: "judgment", pos: "n", def: "The ability to make considered decisions or come to sensible conclusions; good sense" },
+            { id: 52, category: "List C", word: "just as bad / good / tall / clever, etc (as sb/sth)", pos: "phrase", def: "Equally bad/good/tall, etc. as someone or something else" },
+            { id: 53, category: "List C", word: "justice", pos: "n", def: "Just behavior or treatment; fairness" },
+            { id: 54, category: "List C", word: "keen", pos: "adj", def: "Eager, enthusiastic, or having sharp perception" },
+            { id: 55, category: "List C", word: "keep", pos: "v", def: "Continue or retain; delay" },
+            { id: 56, category: "List C", word: "kit", pos: "n", def: "A set of articles or equipment needed for a specific purpose" },
+            { id: 57, category: "List C", word: "learn", pos: "v", def: "Gain knowledge or skill, or memorize/remember" },
+            { id: 58, category: "List C", word: "lecture", pos: "n, v", def: "An educational speech or talk delivered to an audience" },
+            { id: 59, category: "List C", word: "light", pos: "v", def: "Provide light to; illuminate" },
+            { id: 60, category: "List C", word: "living", pos: "n", def: "An income allowing one to maintain a certain standard of life" },
+            { id: 61, category: "List C", word: "logical", pos: "adj", def: "Reasonable or sensible according to clear principles" },
+            { id: 62, category: "List C", word: "look forward to sth/doing sth", pos: "phrase", def: "Await something with pleasure or excitement" },
+            { id: 63, category: "List C", word: "lower", pos: "v", def: "Make or become less in height, amount, or degree" },
+            { id: 64, category: "List C", word: "make sense", pos: "phrase", def: "Be intelligible, reasonable, or understandable" },
+            { id: 65, category: "List C", word: "make up sth or make sth up", pos: "phrase", def: "Invent a story, compose, or constitute something" },
+            { id: 66, category: "List C", word: "make up your mind or make your mind up", pos: "phrase", def: "Reach a decision, decide" },
+            { id: 67, category: "List C", word: "mend", pos: "v", def: "Repair something broken or damaged" },
+            { id: 68, category: "List C", word: "mixture", pos: "n", def: "A combination of different qualities, things, or ingredients" },
+            { id: 69, category: "List C", word: "monthly", pos: "adj", def: "Done, produced, or occurring once every month" },
+            { id: 70, category: "List C", word: "mystery", pos: "n", def: "Something that is difficult or impossible to understand or explain" },
+            { id: 71, category: "List C", word: "name", pos: "v", def: "Give a name to, specify, or reveal names" },
+            { id: 72, category: "List C", word: "native", pos: "adj", def: "Associated with the country or place of one's birth" },
+            { id: 73, category: "List C", word: "neither ... nor", pos: "phrase", def: "Not one nor the other of two things" },
+            { id: 74, category: "List C", word: "nightmare", pos: "n", def: "A terrifying or very unpleasant dream or experience" },
+            { id: 75, category: "List C", word: "nonsense", pos: "n", def: "Spoken or written words that have no meaning or make no sense" },
+            { id: 76, category: "List C", word: "not believe / understand / hear / say, etc. a word", pos: "phrase", def: "Not believe/understand/hear anything at all" },
+            { id: 77, category: "List C", word: "not until", pos: "phrase", def: "Only at or after a specified time" },
+            { id: 78, category: "List C", word: "occupation", pos: "n", def: "A job or profession" },
+            { id: 79, category: "List C", word: "occupy", pos: "v", def: "Fill or use a place or period of time" },
+            { id: 80, category: "List C", word: "oil", pos: "n", def: "A viscous liquid derived from petroleum, used as fuel or lubricant" },
+            { id: 81, category: "List C", word: "on the whole", pos: "phrase", def: "Taking everything into account; in general" },
+            { id: 82, category: "List C", word: "open", pos: "v", def: "Start officially, unfasten, or unlock" },
+            { id: 83, category: "List C", word: "operate", pos: "v", def: "Perform surgical operations or control machine functions" },
+            { id: 84, category: "List C", word: "organ", pos: "n", def: "A part of an organism that has a specific vital function" },
+            { id: 85, category: "List C", word: "organization", pos: "n", def: "An organized body of people with a particular purpose; arrangement" },
+            { id: 86, category: "List C", word: "outstanding", pos: "adj", def: "Exceptionally good, prominent, or unpaid" },
+            { id: 87, category: "List C", word: "part-time", pos: "adj, adv", def: "Working or involving fewer hours than full-time" },
+
+            // --- PAGE 3 (Image 3: patient to satisfy) ---
+            { id: 88, category: "List C", word: "patient", pos: "adj", def: "Able to accept or tolerate delays, problems, or suffering without becoming annoyed" },
+            { id: 89, category: "List C", word: "peculiar", pos: "adj", def: "Strange or odd; unusual" },
+            { id: 90, category: "List C", word: "place", pos: "n", def: "Position at university, in a race, or competition" },
+            { id: 91, category: "List C", word: "point", pos: "n", def: "A particular time, place, or single detail" },
+            { id: 92, category: "List C", word: "point", pos: "v", def: "Hold something so that it faces towards someone or something" },
+            { id: 93, category: "List C", word: "position", pos: "n", def: "Situation; usually plural, the situation someone is in" },
+            { id: 94, category: "List C", word: "potential", pos: "n", def: "Latent qualities or abilities that may be developed" },
+            { id: 95, category: "List C", word: "preference", pos: "n", def: "A greater liking for one alternative over another" },
+            { id: 96, category: "List C", word: "present", pos: "v", def: "Give formally, show, or offer for inspection" },
+            { id: 97, category: "List C", word: "pressure", pos: "n", def: "Continuous physical force or mental stress" },
+            { id: 98, category: "List C", word: "prime", pos: "adj", def: "Of first importance; main or fundamental" },
+            { id: 99, category: "List C", word: "principal", pos: "adj, n", def: "Main; head of a school" },
+            { id: 100, category: "List C", word: "promote", pos: "v", def: "Advance in job position, increase rank, or encourage" },
+            { id: 101, category: "List C", word: "put up with sth/sb", pos: "phrase", def: "Tolerate or endure something/someone unpleasant" },
+            { id: 102, category: "List C", word: "reach", pos: "v, n", def: "Stretch and touch; arrive at" },
+            { id: 103, category: "List C", word: "reason", pos: "n", def: "Fair and showing good judgement; cause or motive" },
+            { id: 104, category: "List C", word: "record", pos: "v, n", def: "Store information in permanent form" },
+            { id: 105, category: "List C", word: "reflect", pos: "v", def: "Show image in mirror; throw back heat, light, or sound" },
+            { id: 106, category: "List C", word: "register", pos: "n, v", def: "Official list or record; enter name officially" },
+            { id: 107, category: "List C", word: "regret", pos: "v, n", def: "Feel sad, repentant, or disappointed over something done" },
+            { id: 108, category: "List C", word: "relate", pos: "v", def: "Connect, make or show connection between" },
+            { id: 109, category: "List C", word: "relative importance", pos: "phrase", def: "Importance when compared to other related elements" },
+            { id: 110, category: "List C", word: "relax", pos: "v", def: "Make or become less tense, anxious, or rigid" },
+            { id: 111, category: "List C", word: "remark", pos: "v, n", def: "Comment or say something as a written/spoken opinion" },
+            { id: 112, category: "List C", word: "remote", pos: "adj", def: "Distant, far away in space or time" },
+            { id: 113, category: "List C", word: "replace", pos: "v", def: "Take the place of or substitute for" },
+            { id: 114, category: "List C", word: "rescue", pos: "v, n", def: "Save from a dangerous or difficult situation" },
+            { id: 115, category: "List C", word: "respect", pos: "v, n", def: "Feel or show admiration for someone/something" },
+            { id: 116, category: "List C", word: "retire", pos: "v", def: "End one's professional career or working life" },
+            { id: 117, category: "List C", word: "right", pos: "adj", def: "Morally acceptable; correct or accurate" },
+            { id: 118, category: "List C", word: "role", pos: "n", def: "Function, purpose, or part played by a person or thing" },
+            { id: 119, category: "List C", word: "room", pos: "n", def: "Space available for use or occupancy" },
+            { id: 120, category: "List C", word: "rough", pos: "adj", def: "Not exact; not smooth, coarse or harsh" },
+            { id: 121, category: "List C", word: "rule", pos: "n", def: "Law, regulation, or explicit instruction" },
+            { id: 122, category: "List C", word: "rule", pos: "v, n", def: "Reign, govern, or exercise control" },
+            { id: 123, category: "List C", word: "run", pos: "v", def: "Operate, manage a business, or move quickly" },
+            { id: 124, category: "List C", word: "rush", pos: "v, n", def: "Hurry or move with urgent speed" },
+            { id: 125, category: "List C", word: "satisfy", pos: "v", def: "Fulfill expectations, needs, or desires" },
+
+            // --- PAGE 4 (Image 4: scale to the main thing) ---
+            { id: 126, category: "List C", word: "scale", pos: "n", def: "Size, ratio, or relative proportion" },
+            { id: 127, category: "List C", word: "scene", pos: "n", def: "Setting in play, film, etc., or place of an incident" },
+            { id: 128, category: "List C", word: "schedule", pos: "n", def: "A plan of procedure or timetable" },
+            { id: 129, category: "List C", word: "sensitive", pos: "adj", def: "Easily hurt, offended, or quick to detect small changes" },
+            { id: 130, category: "List C", word: "service", pos: "n", def: "Government system, department; do work that helps society" },
+            { id: 131, category: "List C", word: "set", pos: "v", def: "Fixed, predetermined, or put in place" },
+            { id: 132, category: "List C", word: "setting", pos: "n", def: "Book/film story background; environment" },
+            { id: 133, category: "List C", word: "shortly", pos: "adv", def: "In a short time; soon" },
+            { id: 134, category: "List C", word: "shut (sth) down or shut down (sth)", pos: "phrase", def: "Stop operating, close permanently or temporarily" },
+            { id: 135, category: "List C", word: "similarity", pos: "n", def: "The state of being similar; resemblance" },
+            { id: 136, category: "List C", word: "slow (sb/sth) down / up or slow down/up (sb/sth)", pos: "phrase", def: "Reduce speed or cause to move slower" },
+            { id: 137, category: "List C", word: "so-called", pos: "adj", def: "Called by a specified title though perhaps wrongly" },
+            { id: 138, category: "List C", word: "society", pos: "n", def: "Club, organization, or aggregate of people living in community" },
+            { id: 139, category: "List C", word: "sooner or later", pos: "phrase", def: "Eventually; at some unstated future time" },
+            { id: 140, category: "List C", word: "spectacular", pos: "adj", def: "Beautiful, dramatic, or eye-catching to view" },
+            { id: 141, category: "List C", word: "speech", pos: "n", def: "Formal talk delivered to an audience" },
+            { id: 142, category: "List C", word: "spoil", pos: "v", def: "Diminish or destroy the quality of; ruin" },
+            { id: 143, category: "List C", word: "start (sth) off or start off (sth)", pos: "phrase", def: "Begin a process or cause something to begin" },
+            { id: 144, category: "List C", word: "style", pos: "n", def: "Individual way, method etc. in art, literature, music, fashion" },
+            { id: 145, category: "List C", word: "sum up (sth/sb) or sum (sth/sb) up", pos: "phrase", def: "Summarize or give a brief statement of the main points" },
+            { id: 146, category: "List C", word: "summary", pos: "n", def: "A brief statement of main points" },
+            { id: 147, category: "List C", word: "support", pos: "v, n", def: "Encourage (e.g. sports fan); look after, especially financially" },
+            { id: 148, category: "List C", word: "survive", pos: "v", def: "Continue to live or exist despite hardship" },
+            { id: 149, category: "List C", word: "take into account sth", pos: "phrase", def: "Consider or include a factor when making a decision" },
+            { id: 150, category: "List C", word: "take part", pos: "phrase", def: "Participate in an activity or event" },
+            { id: 151, category: "List C", word: "take place", pos: "phrase", def: "Occur or happen" },
+            { id: 152, category: "List C", word: "take the/this opportunity to do sth", pos: "phrase", def: "Use a favorable moment to perform an action" },
+            { id: 153, category: "List C", word: "take sb/sth seriously", pos: "phrase", def: "Regard someone or something as important and worthy of attention" },
+            { id: 154, category: "List C", word: "take/accept/claim responsibility for sth", pos: "phrase", def: "Acknowledge oneself as the cause or duty holder" },
+            { id: 155, category: "List C", word: "the headlines", pos: "n", def: "The main news titles in a newspaper or broadcast" },
+            { id: 156, category: "List C", word: "the heart of sth", pos: "phrase", def: "The central or most vital part of something" },
+            { id: 157, category: "List C", word: "the main thing", pos: "phrase", def: "The most important issue or object" },
+
+            // --- PAGE 5 (Image 5: Band III Core I List B) ---
+            { id: 158, category: "List B", word: "above", pos: "adj", def: "Higher up in place or rank" },
+            { id: 159, category: "List B", word: "account", pos: "n", def: "Report, statement, or record of financial matters" },
+            { id: 160, category: "List B", word: "acquire", pos: "v", def: "Gain or obtain possession of something" },
+            { id: 161, category: "List B", word: "age", pos: "n", def: "Period of history, or years of life" },
+            { id: 162, category: "List B", word: "agriculture", pos: "n", def: "Practice of farming and cultivation" },
+            { id: 163, category: "List B", word: "all of a sudden", pos: "phrase", def: "Suddenly, without warning" },
+            { id: 164, category: "List B", word: "altogether", pos: "adv", def: "Completely or in total" },
+            { id: 165, category: "List B", word: "anxious", pos: "adj", def: "Feeling uneasy or worried" },
+            { id: 166, category: "List B", word: "apparent", pos: "adj", def: "Clearly visible or understood; obvious" },
+            { id: 167, category: "List B", word: "appropriate", pos: "adj", def: "Suitable for a given situation" },
+            { id: 168, category: "List B", word: "atmosphere", pos: "n", def: "Air surrounding planet or prevailing mood" },
+            { id: 169, category: "List B", word: "automatically", pos: "adv", def: "Without conscious thought or manual control" },
+            { id: 170, category: "List B", word: "bad", pos: "adj", def: "Rotting, decaying, or poor quality" },
+            { id: 171, category: "List B", word: "be in charge", pos: "phrase", def: "Have command or management of something" },
+            { id: 172, category: "List B", word: "be situated in/on/by, etc", pos: "phrase", def: "Located in a designated place" },
+            { id: 173, category: "List B", word: "behind", pos: "behind", def: "Slower; at the back of" },
+            { id: 174, category: "List B", word: "believe in sth", pos: "phrase", def: "Have faith or confidence in something" },
+            { id: 175, category: "List B", word: "blame", pos: "n", def: "Responsibility for a mistake or fault" },
+            { id: 176, category: "List B", word: "block", pos: "v", def: "Obstruct or prevent movement" },
+            { id: 177, category: "List B", word: "brilliant", pos: "adj", def: "Very intelligent, vivid, or impressive" },
+            { id: 178, category: "List B", word: "bring up sb or bring sb up", pos: "phrase", def: "Raise a child or introduce a topic" },
+            { id: 179, category: "List B", word: "calculate", pos: "v", def: "Determine mathematically" },
+            { id: 180, category: "List B", word: "clothing", pos: "n", def: "Items worn to cover the body" },
+            { id: 181, category: "List B", word: "competitive", pos: "adj", def: "Involving rivalry or strong ambition to win" },
+            { id: 182, category: "List B", word: "contemporary", pos: "adj", def: "Living or occurring at the same time; modern" },
+            { id: 183, category: "List B", word: "contest", pos: "n", def: "An event or competition" },
+            { id: 184, category: "List B", word: "continent", pos: "n", def: "One of the Earth's main continuous landmasses" },
+            { id: 185, category: "List B", word: "copy", pos: "n", def: "Single one (book, paper) or duplicate" },
+            { id: 186, category: "List B", word: "criterion", pos: "n", def: "A principle or standard by which something is judged" },
+            { id: 187, category: "List B", word: "cut down sth or cut sth down", pos: "phrase", def: "Reduce amount or cause to fall by cutting" },
+            { id: 188, category: "List B", word: "decade", pos: "n", def: "A period of 10 years" },
+            { id: 189, category: "List B", word: "declare", pos: "v", def: "Announce formally or state firmly" },
+            { id: 190, category: "List B", word: "degree", pos: "n", def: "Qualification from university or unit of measurement" },
+            { id: 191, category: "List B", word: "deliver", pos: "v, n", def: "Bring goods to destination or hand over" },
+            { id: 192, category: "List B", word: "demanding", pos: "adj", def: "Requiring much effort or attention" },
+            { id: 193, category: "List B", word: "detect", pos: "v", def: "Discover or identify the presence of" },
+            { id: 194, category: "List B", word: "determine", pos: "v", def: "Decide firmly or establish conclusively" },
+            { id: 195, category: "List B", word: "differ", pos: "v", def: "Disagree or hold opposite views" },
+            { id: 196, category: "List B", word: "differ", pos: "v", def: "Vary widely or be unlike" },
+            { id: 197, category: "List B", word: "disappointed", pos: "adj", def: "Sad due to unfulfilled hopes or expectations" },
+            { id: 198, category: "List B", word: "divide", pos: "v", def: "Separate or calculate division" },
+            { id: 199, category: "List B", word: "domestic", pos: "n", def: "Related to country, home, or household" },
+            { id: 200, category: "List B", word: "done", pos: "adj", def: "Finished, completed" },
+
+            // --- PAGE 6 (Image 6: Band III Core I List D) ---
+            { id: 201, category: "List D", word: "a little sth", pos: "phrase", def: "A small quantity of something" },
+            { id: 202, category: "List D", word: "aggressive", pos: "adj", def: "Confrontational or assertive" },
+            { id: 203, category: "List D", word: "air force", pos: "n", def: "Military branch for aerial warfare" },
+            { id: 204, category: "List D", word: "alarm", pos: "n", def: "Warning signal or sudden fear" },
+            { id: 205, category: "List D", word: "all is well", pos: "phrase", def: "Everything is fine and peaceful" },
+            { id: 206, category: "List D", word: "all over the place", pos: "phrase", def: "Scattered in many locations" },
+            { id: 207, category: "List D", word: "ambassador", pos: "n", def: "High-ranking diplomatic representative" },
+            { id: 208, category: "List D", word: "arrow", pos: "n", def: "Sign or pointer, or pointed missile" },
+            { id: 209, category: "List D", word: "artistic", pos: "adj", def: "Creative, aesthetic, or skilled in art" },
+            { id: 210, category: "List D", word: "at fault", pos: "phrase", def: "Responsible for an error" },
+            { id: 211, category: "List D", word: "bank", pos: "n", def: "River edge or financial institution" },
+            { id: 212, category: "List D", word: "bank account", pos: "n", def: "Financial arrangement with a bank" },
+            { id: 213, category: "List D", word: "bargain", pos: "n", def: "Thing bought at good price" },
+            { id: 214, category: "List D", word: "base", pos: "n", def: "Military installation or lowest part" },
+            { id: 215, category: "List D", word: "bay", pos: "n", def: "Body of water enclosed by a curve of coast" },
+            { id: 216, category: "List D", word: "be expecting (a baby)", pos: "phrase", def: "Pregnant" },
+            { id: 217, category: "List D", word: "believe it or not", pos: "phrase", def: "Used to introduce surprising fact" },
+            { id: 218, category: "List D", word: "bell", pos: "n", def: "Hollow metal instrument that rings" },
+            { id: 219, category: "List D", word: "bench", pos: "n", def: "Long seat of wood or stone" },
+            { id: 220, category: "List D", word: "blow up (sth/sb) or blow (sth/sb) up", pos: "phrase", def: "Explode or inflate" },
+            { id: 221, category: "List D", word: "boiled", pos: "adj", def: "Cooked in boiling water" },
+            { id: 222, category: "List D", word: "brake", pos: "v, n", def: "Device for slowing or stopping vehicle" },
+            { id: 223, category: "List D", word: "branch", pos: "n", def: "Subdivision of business, tree part" },
+            { id: 224, category: "List D", word: "breast", pos: "n", def: "Chest area" },
+            { id: 225, category: "List D", word: "brick", pos: "n", def: "Rectangular block for building" },
+            { id: 226, category: "List D", word: "bucket", pos: "n", def: "Open-topped cylindrical container" },
+            { id: 227, category: "List D", word: "bug", pos: "n", def: "Small insect or computer flaw" },
+            { id: 228, category: "List D", word: "bull", pos: "n", def: "Uncastrated male bovine" },
+            { id: 229, category: "List D", word: "bunch", pos: "n", def: "Group of things grouped together" },
+            { id: 230, category: "List D", word: "burst into tears", pos: "phrase", def: "Suddenly start crying" },
+            { id: 231, category: "List D", word: "bury", pos: "v", def: "Place underground" },
+            { id: 232, category: "List D", word: "butcher", pos: "n", def: "Person who cuts and sells meat" },
+            { id: 233, category: "List D", word: "cab", pos: "n", def: "Taxi" },
+            { id: 234, category: "List D", word: "cabin", pos: "n", def: "Small wooden shelter or airplane compartment" },
+            { id: 235, category: "List D", word: "catalog/catalogue", pos: "n", def: "Complete list of items" },
+            { id: 236, category: "List D", word: "cave", pos: "n", def: "Natural underground chamber" },
+            { id: 237, category: "List D", word: "certificate", pos: "n", def: "Official document attesting a fact" },
+            { id: 238, category: "List D", word: "charge", pos: "v", def: "Supply with electrical energy or demand payment" },
+
+            // --- PAGE 7 (Image 7: check in/check out to hang about/around) ---
+            { id: 239, category: "List D", word: "check in/check out", pos: "v", def: "Register arrival or departure" },
+            { id: 240, category: "List D", word: "Cheers!", pos: "exclam", def: "Friendly toast when drinking" },
+            { id: 241, category: "List D", word: "cold", pos: "adj", def: "Unfriendly or low temperature" },
+            { id: 242, category: "List D", word: "collar", pos: "n", def: "Neckband of garment or pet strap" },
+            { id: 243, category: "List D", word: "crash", pos: "v, n", def: "Collision or violent fall" },
+            { id: 244, category: "List D", word: "cross", pos: "n", def: "Symbol or intersecting mark" },
+            { id: 245, category: "List D", word: "customs", pos: "n", def: "Official inspection when going out of country" },
+            { id: 246, category: "List D", word: "date", pos: "n", def: "Day of month or social appointment" },
+            { id: 247, category: "List D", word: "deck", pos: "n", def: "Floor on ship or outdoor platform" },
+            { id: 248, category: "List D", word: "defeat", pos: "v, n", def: "Win victory over" },
+            { id: 249, category: "List D", word: "devil", pos: "n", def: "Evil spirit" },
+            { id: 250, category: "List D", word: "diagram", pos: "n", def: "Simplified drawing or plan" },
+            { id: 251, category: "List D", word: "difficult", pos: "adj", def: "Not friendly, demanding, or hard" },
+            { id: 252, category: "List D", word: "dishonest", pos: "adj", def: "Not honest or trustworthy" },
+            { id: 253, category: "List D", word: "disk", pos: "n", def: "Flat circular object" },
+            { id: 254, category: "List D", word: "divorce", pos: "n", def: "Legal dissolution of marriage" },
+            { id: 255, category: "List D", word: "Don't ask me!", pos: "phrase", def: "Used to express ignorance" },
+            { id: 256, category: "List D", word: "Don't ask!", pos: "phrase", def: "Expressing reluctance to discuss a bad experience" },
+            { id: 257, category: "List D", word: "dreadful", pos: "adj", def: "Extremely bad or terrible" },
+            { id: 258, category: "List D", word: "drink", pos: "v", def: "Consume liquid, especially alcohol" },
+            { id: 259, category: "List D", word: "drive", pos: "n", def: "Computer hard drive or journey" },
+            { id: 260, category: "List D", word: "drop", pos: "n", def: "Small round quantity of liquid" },
+            { id: 261, category: "List D", word: "drunk", pos: "adj", def: "Affected by alcohol" },
+            { id: 262, category: "List D", word: "elbow", pos: "n", def: "Joint between forearm and upper arm" },
+            { id: 263, category: "List D", word: "engagement", pos: "n", def: "Agreement to marry or formal appointment" },
+            { id: 264, category: "List D", word: "explode", pos: "v", def: "Burst violently" },
+            { id: 265, category: "List D", word: "fall in love", pos: "phrase", def: "Develop strong romantic attachment" },
+            { id: 266, category: "List D", word: "fasten", pos: "v", def: "Secure or lock" },
+            { id: 267, category: "List D", word: "fly", pos: "n", def: "Small winged insect" },
+            { id: 268, category: "List D", word: "folk", pos: "n, adj", def: "People in general or traditional" },
+            { id: 269, category: "List D", word: "fool", pos: "n", def: "Person lacking good sense" },
+            { id: 270, category: "List D", word: "for fun or for the fun of it", pos: "phrase", def: "For enjoyment rather than serious reason" },
+            { id: 271, category: "List D", word: "force", pos: "n", def: "Group of people organized for military/police work" },
+            { id: 272, category: "List D", word: "forehead", pos: "n", def: "Part of face above eyebrows" },
+            { id: 273, category: "List D", word: "forgetful", pos: "adj", def: "Apt to forget things" },
+            { id: 274, category: "List D", word: "garage", pos: "n", def: "Automotive repair business or car shelter" },
+            { id: 275, category: "List D", word: "gate", pos: "n", def: "Airport exit to plane or barrier" },
+            { id: 276, category: "List D", word: "gentleman", pos: "n", def: "Chivalrous, courteous man" },
+            { id: 277, category: "List D", word: "get away with sth", pos: "phrase", def: "Escape punishment for an action" },
+            { id: 278, category: "List D", word: "get in", pos: "phrase", def: "Enter vehicle or arrive" },
+            { id: 279, category: "List D", word: "ghost", pos: "n", def: "Apparition of a dead person" },
+            { id: 280, category: "List D", word: "giant", pos: "n, adj", def: "Enormously large entity" },
+            { id: 281, category: "List D", word: "grow tired/old/calm, etc.", pos: "phrase", def: "Gradually become tired/old/calm" },
+            { id: 282, category: "List D", word: "hang about/around", pos: "phrase", def: "Loiter or spend time idly" },
+
+            // --- PAGE 8 (Image 8: hang out to moral) ---
+            { id: 283, category: "Section E-Z", word: "hang out", pos: "phrase", def: "Spend leisure time in a casual location" },
+            { id: 284, category: "Section E-Z", word: "harbor", pos: "n", def: "Sheltered port for ships" },
+            { id: 285, category: "Section E-Z", word: "heaven", pos: "n", def: "Abode of God or state of bliss" },
+            { id: 286, category: "Section E-Z", word: "heel", pos: "n", def: "Back part of foot below ankle" },
+            { id: 287, category: "Section E-Z", word: "hell", pos: "n", def: "Abode of evil spirits or place of suffering" },
+            { id: 288, category: "Section E-Z", word: "horror", pos: "n", def: "Intense feeling of fear or shock" },
+            { id: 289, category: "Section E-Z", word: "hunt", pos: "v", def: "Pursue and kill or chase" },
+            { id: 290, category: "Section E-Z", word: "hurry up sb/sth or hurry sb/sth up", pos: "phrase", def: "Hasten an action" },
+            { id: 291, category: "Section E-Z", word: "hut", pos: "n", def: "Small simple single-story building" },
+            { id: 292, category: "Section E-Z", word: "immoral", pos: "adj", def: "Not conforming to accepted standards of morality" },
+            { id: 293, category: "Section E-Z", word: "in tears", pos: "phrase", def: "Crying" },
+            { id: 294, category: "Section E-Z", word: "initial", pos: "n", def: "First letter of alphabet in a name" },
+            { id: 295, category: "Section E-Z", word: "insult", pos: "v", def: "Speak to or treat with disrespect" },
+            { id: 296, category: "Section E-Z", word: "insurance", pos: "n", def: "Financial protection against risk" },
+            { id: 297, category: "Section E-Z", word: "iron", pos: "v, n", def: "Smooth clothes with heated tool, or metal" },
+            { id: 298, category: "Section E-Z", word: "jog", pos: "v", def: "Run at a steady gentle pace" },
+            { id: 299, category: "Section E-Z", word: "jump", pos: "v", def: "Make a sudden movement in fright or spring into air" },
+            { id: 300, category: "Section E-Z", word: "jury", pos: "n", def: "Body of people sworn to give a verdict" },
+            { id: 301, category: "Section E-Z", word: "knit", pos: "v", def: "Make garments by interlocking yarn loops" },
+            { id: 302, category: "Section E-Z", word: "laser", pos: "n", def: "Device emitting narrow intense beam of light" },
+            { id: 303, category: "Section E-Z", word: "lead", pos: "n", def: "Winning position or main role" },
+            { id: 304, category: "Section E-Z", word: "learning", pos: "n", def: "Acquisition of knowledge or skills" },
+            { id: 305, category: "Section E-Z", word: "lightning", pos: "n", def: "Electrical discharge in atmosphere" },
+            { id: 306, category: "Section E-Z", word: "literary", pos: "adj", def: "Concerning writing or literature" },
+            { id: 307, category: "Section E-Z", word: "loaf", pos: "n", def: "Quantity of bread baked in one piece" },
+            { id: 308, category: "Section E-Z", word: "loose", pos: "adj", def: "Not firmly fixed in place" },
+            { id: 309, category: "Section E-Z", word: "lover", pos: "n", def: "Sexual partner or admirer/fan" },
+            { id: 310, category: "Section E-Z", word: "madam", pos: "n", def: "Polite way of speaking to a woman" },
+            { id: 311, category: "Section E-Z", word: "magnificent", pos: "adj", def: "Impressively beautiful, elaborate, or extravagant" },
+            { id: 312, category: "Section E-Z", word: "make", pos: "v", def: "Arrive or succeed in reaching" },
+            { id: 313, category: "Section E-Z", word: "marriage", pos: "n", def: "Formal union of two people" },
+            { id: 314, category: "Section E-Z", word: "mask", pos: "n", def: "Cover for face" },
+            { id: 315, category: "Section E-Z", word: "mate", pos: "n", def: "Friend or companion" },
+            { id: 316, category: "Section E-Z", word: "mess", pos: "n", def: "Untidy or dirty state" },
+            { id: 317, category: "Section E-Z", word: "mineral water", pos: "n", def: "Water containing dissolved minerals" },
+            { id: 318, category: "Section E-Z", word: "mix up sb/sth or mix sb/sth up", pos: "phrase", def: "Confuse two things or people" },
+            { id: 319, category: "Section E-Z", word: "monster", pos: "n", def: "Imaginary terrifying creature" },
+            { id: 320, category: "Section E-Z", word: "moral", pos: "n", def: "Lesson concerning right and wrong" },
+
+            // --- PAGE 9 (Image 9: the reality/realities to wherever) ---
+            { id: 321, category: "Section E-Z", word: "the reality/realities of sth", pos: "phrase", def: "The actual state of affairs" },
+            { id: 322, category: "Section E-Z", word: "theme", pos: "n", def: "Subject or central topic" },
+            { id: 323, category: "Section E-Z", word: "to", pos: "prep", def: "Expressing range or direction" },
+            { id: 324, category: "Section E-Z", word: "to start with", pos: "phrase", def: "In the first place, initially" },
+            { id: 325, category: "Section E-Z", word: "treasure", pos: "n", def: "Quantity of precious metals or gems" },
+            { id: 326, category: "Section E-Z", word: "try", pos: "n", def: "Attempt or effort" },
+            { id: 327, category: "Section E-Z", word: "turn", pos: "n", def: "Chance or opportunity" },
+            { id: 328, category: "Section E-Z", word: "uncomfortable", pos: "adj", def: "Causing physical or mental discomfort" },
+            { id: 329, category: "Section E-Z", word: "underneath", pos: "prep, adv", def: "Directly below or under" },
+            { id: 330, category: "Section E-Z", word: "understand", pos: "v", def: "Know feelings; sympathetic; comprehend" },
+            { id: 331, category: "Section E-Z", word: "undo", pos: "v", def: "Unfasten or cancel an action" },
+            { id: 332, category: "Section E-Z", word: "unemployed", pos: "adj", def: "Without a job" },
+            { id: 333, category: "Section E-Z", word: "unexpected", pos: "adj", def: "Not foreseen or anticipated" },
+            { id: 334, category: "Section E-Z", word: "up-to-date", pos: "adj", def: "Incorporating the latest information" },
+            { id: 335, category: "Section E-Z", word: "urgent", pos: "adj", def: "Requiring immediate action" },
+            { id: 336, category: "Section E-Z", word: "use up sth or use sth up", pos: "phrase", def: "Exhaust entire supply of something" },
+            { id: 337, category: "Section E-Z", word: "virtual reality", pos: "n", def: "Computer-generated 3D environment" },
+            { id: 338, category: "Section E-Z", word: "vowel", pos: "n", def: "Speech sound produced without obstruction (a,e,i,o,u)" },
+            { id: 339, category: "Section E-Z", word: "waste", pos: "v, adj", def: "Use too much or unprofitably" },
+            { id: 340, category: "Section E-Z", word: "wealth", pos: "n", def: "Abundance of valuable possessions or money" },
+            { id: 341, category: "Section E-Z", word: "welcome", pos: "v, adj", def: "Support, encourage, pleasing reception" },
+            { id: 342, category: "Section E-Z", word: "wherever", pos: "adv", def: "In or to whatever place" },
+
+            // --- PAGE 10 (Image 10: rude to sweep) ---
+            { id: 343, category: "Section E-Z", word: "rude", pos: "adj", def: "Impolite or offensive" },
+            { id: 344, category: "Section E-Z", word: "scandal", pos: "n", def: "Action causing public outrage" },
+            { id: 345, category: "Section E-Z", word: "scratch", pos: "n, v", def: "Hurt, damage surface with sharp mark" },
+            { id: 346, category: "Section E-Z", word: "sculpture", pos: "n", def: "Three-dimensional art piece" },
+            { id: 347, category: "Section E-Z", word: "see off sb or see sb off", pos: "phrase", def: "Accompany departing person to farewell point" },
+            { id: 348, category: "Section E-Z", word: "selfish", pos: "adj", def: "Lacking consideration for others" },
+            { id: 349, category: "Section E-Z", word: "separate", pos: "v", def: "Husband/wife parting, or divide into parts" },
+            { id: 350, category: "Section E-Z", word: "sex", pos: "n", def: "Mating, making love, gender" },
+            { id: 351, category: "Section E-Z", word: "shade", pos: "n", def: "Area screened from direct sunlight; no sunlight" },
+            { id: 352, category: "Section E-Z", word: "shake your head", pos: "phrase", def: "Turn head left-right in disagreement" },
+            { id: 353, category: "Section E-Z", word: "shave", pos: "v, n", def: "Cut hair close to skin" },
+            { id: 354, category: "Section E-Z", word: "shore", pos: "n", def: "Land along edge of sea or lake" },
+            { id: 355, category: "Section E-Z", word: "show sb around / round", pos: "phrase", def: "Guide someone through a place" },
+            { id: 356, category: "Section E-Z", word: "shut (sb) up", pos: "phrase", def: "Stop talking" },
+            { id: 357, category: "Section E-Z", word: "sidewalk", pos: "n", def: "Paved path at side of street" },
+            { id: 358, category: "Section E-Z", word: "sigh", pos: "v, n", def: "Exhale audibly in relief or fatigue" },
+            { id: 359, category: "Section E-Z", word: "silk", pos: "n", def: "Fine soft fabric" },
+            { id: 360, category: "Section E-Z", word: "sit up/stand up straight", pos: "phrase", def: "Maintain posture straight" },
+            { id: 361, category: "Section E-Z", word: "slave", pos: "n", def: "Person legally owned by another" },
+            { id: 362, category: "Section E-Z", word: "sleeve", pos: "n", def: "Part of garment covering arm" },
+            { id: 363, category: "Section E-Z", word: "sore", pos: "adj", def: "Painful or aching" },
+            { id: 364, category: "Section E-Z", word: "split up", pos: "phrase", def: "End a relationship" },
+            { id: 365, category: "Section E-Z", word: "sportsman", pos: "n", def: "Person who plays sports" },
+            { id: 366, category: "Section E-Z", word: "spot", pos: "v", def: "Notice or see" },
+            { id: 367, category: "Section E-Z", word: "spy", pos: "n, v", def: "Person secretly gathering information" },
+            { id: 368, category: "Section E-Z", word: "squeeze", pos: "v, n", def: "Firmly press something" },
+            { id: 369, category: "Section E-Z", word: "stare", pos: "v, n", def: "Look fixedly with eyes wide open" },
+            { id: 370, category: "Section E-Z", word: "stay over", pos: "phrase", def: "Spend the night" },
+            { id: 371, category: "Section E-Z", word: "stay up", pos: "phrase", def: "Remain awake past normal bedtime" },
+            { id: 372, category: "Section E-Z", word: "steep", pos: "adj", def: "Rising or falling sharply" },
+            { id: 373, category: "Section E-Z", word: "step back / forward / over, etc.", pos: "phrase", def: "Move body one step in a direction" },
+            { id: 374, category: "Section E-Z", word: "step on/in sth", pos: "phrase", def: "Place foot onto something" },
+            { id: 375, category: "Section E-Z", word: "stick", pos: "n", def: "Short branch or rod of wood" },
+            { id: 376, category: "Section E-Z", word: "strangely enough", pos: "phrase", def: "Surprisingly" },
+            { id: 377, category: "Section E-Z", word: "stream", pos: "n", def: "Small river or flow" },
+            { id: 378, category: "Section E-Z", word: "stretch", pos: "v, n", def: "Extend length of body or item" },
+            { id: 379, category: "Section E-Z", word: "strict", pos: "adj", def: "Demanding total obedience" },
+            { id: 380, category: "Section E-Z", word: "string", pos: "n", def: "Thin rope; musical instrument wire" },
+            { id: 381, category: "Section E-Z", word: "stripe", pos: "n", def: "Long narrow band of color" },
+            { id: 382, category: "Section E-Z", word: "suit", pos: "v", def: "Look attractive on someone" },
+            { id: 383, category: "Section E-Z", word: "swear", pos: "v", def: "Curse or make solemn oath" },
+            { id: 384, category: "Section E-Z", word: "sweep", pos: "v", def: "Clean floor with broom" },
+
+            // --- PAGE 11 (Image 11: quit to suffer from sth) ---
+            { id: 385, category: "Section E-Z", word: "quit", pos: "v", def: "Stop doing something or leave job" },
+            { id: 386, category: "Section E-Z", word: "race", pos: "n", def: "Ethnic group or speed competition" },
+            { id: 387, category: "Section E-Z", word: "raw", pos: "adj", def: "Uncooked or unprocessed" },
+            { id: 388, category: "Section E-Z", word: "reassure", pos: "v", def: "Say something to remove doubts/fears" },
+            { id: 389, category: "Section E-Z", word: "remain calm/open, etc.", pos: "phrase", def: "Stay in specified quiet/open state" },
+            { id: 390, category: "Section E-Z", word: "reserve", pos: "v", def: "Book in advance" },
+            { id: 391, category: "Section E-Z", word: "server", pos: "n", def: "Computing server or food attendant" },
+            { id: 392, category: "Section E-Z", word: "shame", pos: "n", def: "Regret, disappointment, or feeling of embarrassment" },
+            { id: 393, category: "Section E-Z", word: "shaming", pos: "n", def: "Humiliating publicly" },
+            { id: 394, category: "Section E-Z", word: "shelter", pos: "n, v", def: "Structure giving protection" },
+            { id: 395, category: "Section E-Z", word: "show up", pos: "phrase", def: "Arrive or appear" },
+            { id: 396, category: "Section E-Z", word: "side", pos: "n", def: "Facet of something or somebody" },
+            { id: 397, category: "Section E-Z", word: "sign", pos: "v", def: "Write signature" },
+            { id: 398, category: "Section E-Z", word: "signal", pos: "n", def: "Traffic signal, railway signal, or indicator" },
+            { id: 399, category: "Section E-Z", word: "sink", pos: "v", def: "Go down below surface" },
+            { id: 400, category: "Section E-Z", word: "slip", pos: "v, n", def: "Fall, slide unexpectedly" },
+            { id: 401, category: "Section E-Z", word: "smart", pos: "adj", def: "Intelligent or stylish" },
+            { id: 402, category: "Section E-Z", word: "smooth", pos: "adj", def: "Even surface without roughness" },
+            { id: 403, category: "Section E-Z", word: "so did we / so have I / so is mine, etc.", pos: "phrase", def: "Agreement expressing shared state" },
+            { id: 404, category: "Section E-Z", word: "some kind of", pos: "phrase", def: "Unspecified type of" },
+            { id: 405, category: "Section E-Z", word: "somewhere around / between, etc.", pos: "phrase", def: "Approximate location or figure" },
+            { id: 406, category: "Section E-Z", word: "sound angry / happy / rude, etc.", pos: "phrase", def: "Convey tone of voice" },
+            { id: 407, category: "Section E-Z", word: "speak about/of sth", pos: "phrase", def: "Discuss a topic" },
+            { id: 408, category: "Section E-Z", word: "special offer", pos: "n", def: "Reduced price deal" },
+            { id: 409, category: "Section E-Z", word: "speed", pos: "n", def: "Rate of motion" },
+            { id: 410, category: "Section E-Z", word: "spill", pos: "v", def: "Flow over edge of container" },
+            { id: 411, category: "Section E-Z", word: "spirit", pos: "n", def: "Attitude, morale, or soul" },
+            { id: 412, category: "Section E-Z", word: "spread", pos: "v, n", def: "Distribute over area" },
+            { id: 413, category: "Section E-Z", word: "stay", pos: "n", def: "Period of time spent in a place" },
+            { id: 414, category: "Section E-Z", word: "strengthen", pos: "v", def: "Make stronger" },
+            { id: 415, category: "Section E-Z", word: "strike", pos: "v, n", def: "Stop work in protest; hit" },
+            { id: 416, category: "Section E-Z", word: "strong", pos: "adj", def: "Relationship, determined, personality, powerful" },
+            { id: 417, category: "Section E-Z", word: "struggle", pos: "v, n", def: "Make forceful efforts against difficulty" },
+            { id: 418, category: "Section E-Z", word: "subway", pos: "n", def: "Underground railway system" },
+            { id: 419, category: "Section E-Z", word: "suffer from sth", pos: "phrase", def: "Experience pain or illness" },
+
+            // --- PAGE 12 (Image 12: ceremony to float) ---
+            { id: 420, category: "Section E-Z", word: "ceremony", pos: "n", def: "Formal event on special occasion" },
+            { id: 421, category: "Section E-Z", word: "chairperson", pos: "n", def: "Head of committee or organization" },
+            { id: 422, category: "Section E-Z", word: "chase", pos: "v, n", def: "Pursue quickly" },
+            { id: 423, category: "Section E-Z", word: "cheat", pos: "v, n", def: "Act dishonestly" },
+            { id: 424, category: "Section E-Z", word: "classic", pos: "adj", def: "High quality benchmark" },
+            { id: 425, category: "Section E-Z", word: "clinic", pos: "n", def: "Outpatient medical person/facility" },
+            { id: 426, category: "Section E-Z", word: "coach", pos: "n, v", def: "Instructor, trainer" },
+            { id: 427, category: "Section E-Z", word: "collector", pos: "n", def: "Person collecting things; write" },
+            { id: 428, category: "Section E-Z", word: "correspond", pos: "v", def: "Match or communicate by letter" },
+            { id: 429, category: "Section E-Z", word: "costume", pos: "n", def: "Stage clothes" },
+            { id: 430, category: "Section E-Z", word: "courage", pos: "n", def: "Bravery" },
+            { id: 431, category: "Section E-Z", word: "cover", pos: "v", def: "Report news, overlay surface" },
+            { id: 432, category: "Section E-Z", word: "cure", pos: "v, n", def: "Relieve illness" },
+            { id: 433, category: "Section E-Z", word: "cyberbullying", pos: "n", def: "Online harassment" },
+            { id: 434, category: "Section E-Z", word: "cycle", pos: "n, v", def: "Ride bicycle" },
+            { id: 435, category: "Section E-Z", word: "deaf", pos: "adj", def: "Unable to hear" },
+            { id: 436, category: "Section E-Z", word: "debt", pos: "n", def: "Owed money" },
+            { id: 437, category: "Section E-Z", word: "decorate", pos: "v", def: "Adorn or paint room" },
+            { id: 438, category: "Section E-Z", word: "dedicate", pos: "v", def: "Devote in memory of" },
+            { id: 439, category: "Section E-Z", word: "departure", pos: "n", def: "Leaving a place" },
+            { id: 440, category: "Section E-Z", word: "deposit", pos: "n", def: "Sum put in bank or paid down" },
+            { id: 441, category: "Section E-Z", word: "deserve", pos: "v", def: "Be worthy of" },
+            { id: 442, category: "Section E-Z", word: "destination", pos: "n", def: "Place aimed for" },
+            { id: 443, category: "Section E-Z", word: "direct", pos: "v", def: "Guide play/film or give direction" },
+            { id: 444, category: "Section E-Z", word: "disabled", pos: "adj, n", def: "Having physical/mental impairment" },
+            { id: 445, category: "Section E-Z", word: "dispute", pos: "n", def: "Disagreement or argument" },
+            { id: 446, category: "Section E-Z", word: "distinguish", pos: "v", def: "Recognize difference" },
+            { id: 447, category: "Section E-Z", word: "disturb", pos: "v", def: "Interrupt or bother" },
+            { id: 448, category: "Section E-Z", word: "do a good/excellent, etc. job", pos: "phrase", def: "Perform task exceptionally well" },
+            { id: 449, category: "Section E-Z", word: "dozen", pos: "n", def: "Group of 12" },
+            { id: 450, category: "Section E-Z", word: "draft", pos: "n", def: "Preliminary text" },
+            { id: 451, category: "Section E-Z", word: "dramatic", pos: "adj", def: "Sudden and striking" },
+            { id: 452, category: "Section E-Z", word: "earth", pos: "n", def: "Soil or our planet" },
+            { id: 453, category: "Section E-Z", word: "earthquake", pos: "n", def: "Violent shaking of ground" },
+            { id: 454, category: "Section E-Z", word: "elderly", pos: "adj", def: "Old people" },
+            { id: 455, category: "Section E-Z", word: "enter", pos: "v", def: "Key in information or go inside" },
+            { id: 456, category: "Section E-Z", word: "episode", pos: "n", def: "Installment of show" },
+            { id: 457, category: "Section E-Z", word: "equal", pos: "v", def: "Be same as" },
+            { id: 458, category: "Section E-Z", word: "escape", pos: "n", def: "Break free from confinement" },
+            { id: 459, category: "Section E-Z", word: "fare", pos: "n", def: "Ticket price for transport" },
+            { id: 460, category: "Section E-Z", word: "fire", pos: "v", def: "Dismiss, sack from job" },
+            { id: 461, category: "Section E-Z", word: "firm", pos: "adj", def: "Hard, solid, or steadfast" },
+            { id: 462, category: "Section E-Z", word: "float", pos: "v", def: "Rest on surface of liquid" },
+
+            // --- PAGE 13 (Image 13: super to weakness) ---
+            { id: 463, category: "Section E-Z", word: "super", pos: "adj", def: "Excellent" },
+            { id: 464, category: "Section E-Z", word: "swear", pos: "v", def: "Promise or curse" },
+            { id: 465, category: "Section E-Z", word: "suspect", pos: "v, n", def: "Believe guilty without proof" },
+            { id: 466, category: "Section E-Z", word: "switch", pos: "n", def: "Electrical on-off device" },
+            { id: 467, category: "Section E-Z", word: "symbol", pos: "n", def: "Mark representing an idea" },
+            { id: 468, category: "Section E-Z", word: "table", pos: "n", def: "Chart, grid of data" },
+            { id: 469, category: "Section E-Z", word: "take pleasure/pride/an interest, etc.", pos: "phrase", def: "Derive joy, pride, or interest from" },
+            { id: 470, category: "Section E-Z", word: "take sb's place", pos: "phrase", def: "Substitute for someone" },
+            { id: 471, category: "Section E-Z", word: "tear", pos: "v, n", def: "Rip fabric/paper or droplet from eye" },
+            { id: 472, category: "Section E-Z", word: "term", pos: "n", def: "Period of time, rules, or word expression" },
+            { id: 473, category: "Section E-Z", word: "terminal", pos: "n", def: "End station or airport building" },
+            { id: 474, category: "Section E-Z", word: "that kind/sort of thing", pos: "phrase", def: "Similar items or topics" },
+            { id: 475, category: "Section E-Z", word: "that's it", pos: "phrase", def: "Completed or correct" },
+            { id: 476, category: "Section E-Z", word: "the following day / morning, etc.", pos: "phrase", def: "The next day/morning" },
+            { id: 477, category: "Section E-Z", word: "thief", pos: "n", def: "Person who steals" },
+            { id: 478, category: "Section E-Z", word: "tight", pos: "adj, adv", def: "Clothes; firm; controlled" },
+            { id: 479, category: "Section E-Z", word: "tip", pos: "n", def: "Piece of practical advice" },
+            { id: 480, category: "Section E-Z", word: "tired of doing sth", pos: "phrase", def: "Bored or exhausted with activity" },
+            { id: 481, category: "Section E-Z", word: "tiring", pos: "adj", def: "Causing fatigue" },
+            { id: 482, category: "Section E-Z", word: "touch", pos: "n", def: "Act of touching; affect emotionally" },
+            { id: 483, category: "Section E-Z", word: "tough", pos: "adj", def: "Difficult, strong, or resilient" },
+            { id: 484, category: "Section E-Z", word: "trade", pos: "n", def: "Industry, occupation, job" },
+            { id: 485, category: "Section E-Z", word: "transfer", pos: "v", def: "Move from one place to another" },
+            { id: 486, category: "Section E-Z", word: "tribe", pos: "n", def: "Social group of related families" },
+            { id: 487, category: "Section E-Z", word: "trick", pos: "n, v", def: "Deceive or clever action" },
+            { id: 488, category: "Section E-Z", word: "turn (sb/sth) into sb/sth", pos: "phrase", def: "Transform or convert" },
+            { id: 489, category: "Section E-Z", word: "underline", pos: "v", def: "Emphasize or draw line underneath" },
+            { id: 490, category: "Section E-Z", word: "union", pos: "n", def: "Organization of workers" },
+            { id: 491, category: "Section E-Z", word: "use", pos: "n, v", def: "The way a word is used; to say/write" },
+            { id: 492, category: "Section E-Z", word: "via", pos: "prep", def: "Traveling through or using a route" },
+            { id: 493, category: "Section E-Z", word: "victim", pos: "n", def: "Person harmed as result of crime/accident" },
+            { id: 494, category: "Section E-Z", word: "warm", pos: "v", def: "Make comfortably hot" },
+            { id: 495, category: "Section E-Z", word: "weakness", pos: "n", def: "State of lacking strength" },
+
+            // --- PAGE 14 (Image 14: wear out to will) ---
+            { id: 496, category: "Section E-Z", word: "wear (sth) out or wear out (sth)", pos: "phrase", def: "Use until unserviceable" },
+            { id: 497, category: "Section E-Z", word: "weather forecast", pos: "phrase", def: "Prediction of meteorological conditions" },
+            { id: 498, category: "Section E-Z", word: "weigh", pos: "v", def: "Heaviness; consider carefully" },
+            { id: 499, category: "Section E-Z", word: "weird", pos: "adj", def: "Strange or bizarre" },
+            { id: 500, category: "Section E-Z", word: "whatever", pos: "det, pron", def: "Anything at all" },
+            { id: 501, category: "Section E-Z", word: "Who cares?", pos: "phrase", def: "Expressing total indifference" },
+            { id: 502, category: "Section E-Z", word: "wise", pos: "adj", def: "Having wisdom or sound judgment" },
+            { id: 503, category: "Section E-Z", word: "wrap", pos: "v", def: "Cover or protect with paper/cloth" },
+            { id: 504, category: "Section E-Z", word: "Yours sincerely", pos: "phrase", def: "Formal sign-off in letter" },
+            { id: 505, category: "Section E-Z", word: "will", pos: "n", def: "Mental power, determination, or legal testament" },
+
+            // --- PAGE 15 (Image 15: List A) ---
+            { id: 506, category: "List A", word: "addition", pos: "n", def: "Action of adding" },
+            { id: 507, category: "List A", word: "advance", pos: "n", def: "Progress" },
+            { id: 508, category: "List A", word: "advanced", pos: "adj", def: "Modern, high level" },
+            { id: 509, category: "List A", word: "advertising", pos: "n", def: "Promotion of products" },
+            { id: 510, category: "List A", word: "among other things", pos: "phrase", def: "In addition to other unlisted factors" },
+            { id: 511, category: "List A", word: "analysis", pos: "n", def: "Detailed examination" },
+            { id: 512, category: "List A", word: "appear", pos: "v", def: "Seem or come into view" },
+            { id: 513, category: "List A", word: "approach", pos: "v, n", def: "Deal with, method" },
+            { id: 514, category: "List A", word: "as", pos: "conj", def: "While, when" },
+            { id: 515, category: "List A", word: "at least", pos: "phrase", def: "Not less than" },
+            { id: 516, category: "List A", word: "average", pos: "adj", def: "Ordinary, usual" },
+            { id: 517, category: "List A", word: "be responsible for sth/doing sth", pos: "phrase", def: "Obligated to handle" },
+            { id: 518, category: "List A", word: "before", pos: "prep", def: "In order" },
+            { id: 519, category: "List A", word: "besides", pos: "prep, adv", def: "In addition to" },
+            { id: 520, category: "List A", word: "can", pos: "v", def: "Modal, sometimes happening" },
+            { id: 521, category: "List A", word: "challenge", pos: "v", def: "Express disagreement" },
+            { id: 522, category: "List A", word: "chance", pos: "n", def: "Risk or opportunity" },
+            { id: 523, category: "List A", word: "change", pos: "v", def: "Exchange in shop; money; new experience; climate change" },
+            { id: 524, category: "List A", word: "characteristic", pos: "n", def: "Typical feature" },
+            { id: 525, category: "List A", word: "claim", pos: "v", def: "Statement without proof" },
+            { id: 526, category: "List A", word: "come after/first/last, etc", pos: "phrase", def: "Rank or follow in order" },
+            { id: 527, category: "List A", word: "common", pos: "adj", def: "Shared" },
+            { id: 528, category: "List A", word: "complicated", pos: "adj", def: "Intricate, hard to understand" },
+            { id: 529, category: "List A", word: "concern", pos: "v", def: "Worry or relate to" },
+            { id: 530, category: "List A", word: "conditions", pos: "n", def: "Stipulations or environment state" },
+            { id: 531, category: "List A", word: "conduct", pos: "v", def: "Carry out" },
+            { id: 532, category: "List A", word: "consequence", pos: "n", def: "Result or effect" },
+            { id: 533, category: "List A", word: "considerable", pos: "adj", def: "Great in amount or importance" },
+            { id: 534, category: "List A", word: "cope", pos: "v", def: "Deal effectively with something" },
+            { id: 535, category: "List A", word: "critic", pos: "n", def: "Person who does not approve or evaluates art" },
+            { id: 536, category: "List A", word: "current", pos: "adj", def: "Belonging to the present time" },
+            { id: 537, category: "List A", word: "decrease", pos: "v, n", def: "Become smaller or fewer" },
+            { id: 538, category: "List A", word: "delayed", pos: "adj", def: "Late or postponed" },
+            { id: 539, category: "List A", word: "deliberately", pos: "adv", def: "Intentionally" },
+            { id: 540, category: "List A", word: "demonstrate", pos: "v", def: "March, show clearly" },
+
+            // --- PAGE 16 (Image 16: design to ideal) ---
+            { id: 541, category: "Section E-Z", word: "design", pos: "n", def: "Decoration or plan layout" },
+            { id: 542, category: "Section E-Z", word: "destruction", pos: "n", def: "Action of destroying" },
+            { id: 543, category: "Section E-Z", word: "development", pos: "n", def: "Event, process of growth" },
+            { id: 544, category: "Section E-Z", word: "disagreement", pos: "n", def: "Lack of consensus" },
+            { id: 545, category: "Section E-Z", word: "disaster", pos: "n", def: "Catastrophic event" },
+            { id: 546, category: "Section E-Z", word: "discovery", pos: "n", def: "Finding something new" },
+            { id: 547, category: "Section E-Z", word: "dislike", pos: "n, v", def: "Distaste for" },
+            { id: 548, category: "Section E-Z", word: "do", pos: "aux v", def: "Used for emphasis" },
+            { id: 549, category: "Section E-Z", word: "doubt", pos: "v", def: "Feel uncertain" },
+            { id: 550, category: "Section E-Z", word: "drop", pos: "v, n", def: "Move lower" },
+            { id: 551, category: "Section E-Z", word: "educate", pos: "v", def: "Teach or instruct" },
+            { id: 552, category: "Section E-Z", word: "efficient", pos: "adj", def: "Achieving maximum productivity with minimum wasted effort" },
+            { id: 553, category: "Section E-Z", word: "emphasis", pos: "n", def: "Special importance given to something" },
+            { id: 554, category: "Section E-Z", word: "enjoyable", pos: "adj", def: "Giving pleasure" },
+            { id: 555, category: "Section E-Z", word: "essay", pos: "n", def: "Short piece of writing" },
+            { id: 556, category: "Section E-Z", word: "essentially", pos: "adv", def: "Basically, fundamentally" },
+            { id: 557, category: "Section E-Z", word: "even if", pos: "phrase", def: "Whether or not" },
+            { id: 558, category: "Section E-Z", word: "even though", pos: "phrase", def: "Despite the fact that" },
+            { id: 559, category: "Section E-Z", word: "event", pos: "n", def: "Thing that happens" },
+            { id: 560, category: "Section E-Z", word: "exactly", pos: "adv", def: "Emphasis, agreement; precisely" },
+            { id: 561, category: "Section E-Z", word: "except that", pos: "phrase", def: "With the exception that" },
+            { id: 562, category: "Section E-Z", word: "exist", pos: "v", def: "Have objective reality" },
+            { id: 563, category: "Section E-Z", word: "extraordinary", pos: "adj", def: "Very unusual or remarkable" },
+            { id: 564, category: "Section E-Z", word: "feature", pos: "n", def: "Important part of something" },
+            { id: 565, category: "Section E-Z", word: "feedback", pos: "n", def: "Evaluative information" },
+            { id: 566, category: "Section E-Z", word: "figure", pos: "n", def: "Body shape or figure out a problem" },
+            { id: 567, category: "Section E-Z", word: "financial", pos: "adj", def: "Relating to money" },
+            { id: 568, category: "Section E-Z", word: "finding/findings", pos: "n", def: "Conclusions reached by investigation" },
+            { id: 569, category: "Section E-Z", word: "flexible", pos: "adj", def: "Adaptable" },
+            { id: 570, category: "Section E-Z", word: "flood", pos: "v, n", def: "Overflow of water" },
+            { id: 571, category: "Section E-Z", word: "flu", pos: "n", def: "Influenza" },
+            { id: 572, category: "Section E-Z", word: "focus on/upon sb/sth", pos: "phrase", def: "Concentrate attention on" },
+            { id: 573, category: "Section E-Z", word: "focus", pos: "n", def: "Center of interest" },
+            { id: 574, category: "Section E-Z", word: "frequent", pos: "adj", def: "Occurring often" },
+            { id: 575, category: "Section E-Z", word: "fresh", pos: "adj", def: "Recent or newly made" },
+            { id: 576, category: "Section E-Z", word: "frighten", pos: "v", def: "Scare" },
+            { id: 577, category: "Section E-Z", word: "from", pos: "prep", def: "Position, starting point" },
+            { id: 578, category: "Section E-Z", word: "gain", pos: "v, n", def: "Increase or obtain" },
+            { id: 579, category: "Section E-Z", word: "generate", pos: "v", def: "Create or produce" },
+            { id: 580, category: "Section E-Z", word: "guidance", pos: "n", def: "Advice or direction" },
+            { id: 581, category: "Section E-Z", word: "hopefully", pos: "adv", def: "In a hopeful manner" },
+            { id: 582, category: "Section E-Z", word: "ideal", pos: "adj", def: "Satisfying one's conception of what is perfect" },
+
+            // --- PAGE 17 (Image 17: fold to lightly) ---
+            { id: 583, category: "Section E-Z", word: "fold", pos: "v", def: "Bend over itself" },
+            { id: 584, category: "Section E-Z", word: "follow", pos: "v", def: "Understand or come after" },
+            { id: 585, category: "Section E-Z", word: "for the sake of sth/sb; for sth's/sb's sake", pos: "phrase", def: "In the interest or benefit of" },
+            { id: 586, category: "Section E-Z", word: "formal", pos: "adj", def: "Official or ceremonial" },
+            { id: 587, category: "Section E-Z", word: "former", pos: "adj", def: "Having previously held a role" },
+            { id: 588, category: "Section E-Z", word: "fortune", pos: "n", def: "Money, large sum" },
+            { id: 589, category: "Section E-Z", word: "free", pos: "adj, adv", def: "Not limited or without cost" },
+            { id: 590, category: "Section E-Z", word: "free will", pos: "phrase", def: "Power of acting without constraint" },
+            { id: 591, category: "Section E-Z", word: "frozen", pos: "adj", def: "Turned into ice" },
+            { id: 592, category: "Section E-Z", word: "generous", pos: "adj", def: "Showing readiness to give" },
+            { id: 593, category: "Section E-Z", word: "get", pos: "v", def: "Answer telephone, door, or obtain" },
+            { id: 594, category: "Section E-Z", word: "get in touch", pos: "phrase", def: "Establish communication" },
+            { id: 595, category: "Section E-Z", word: "give in/up", pos: "phrase", def: "Surrender" },
+            { id: 596, category: "Section E-Z", word: "give up sth or give sth up", pos: "phrase", def: "Cease doing or consuming" },
+            { id: 597, category: "Section E-Z", word: "go ahead", pos: "phrase", def: "Proceed" },
+            { id: 598, category: "Section E-Z", word: "grab", pos: "v", def: "Seize suddenly" },
+            { id: 599, category: "Section E-Z", word: "grateful", pos: "adj", def: "Thankful" },
+            { id: 600, category: "Section E-Z", word: "hardware", pos: "n, v", def: "Tools or computer equipment" },
+            { id: 601, category: "Section E-Z", word: "headquarters", pos: "n", def: "Main office of organization" },
+            { id: 602, category: "Section E-Z", word: "here you are/here it is, etc.", pos: "phrase", def: "Used when handing something over" },
+            { id: 603, category: "Section E-Z", word: "hold up / hold up sb/sth or hold sb/sth up", pos: "phrase", def: "Delay or rob" },
+            { id: 604, category: "Section E-Z", word: "honesty", pos: "n", def: "Truthfulness" },
+            { id: 605, category: "Section E-Z", word: "idiom", pos: "n", def: "Group of words with figurative meaning" },
+            { id: 606, category: "Section E-Z", word: "in turn", pos: "phrase", def: "As a result or sequentially" },
+            { id: 607, category: "Section E-Z", word: "incident", pos: "n", def: "An event or occurrence" },
+            { id: 608, category: "Section E-Z", word: "laugh", pos: "n", def: "Audible expression of amusement" },
+            { id: 609, category: "Section E-Z", word: "layer", pos: "n", def: "Sheet or thickness of material" },
+            { id: 610, category: "Section E-Z", word: "leave behind sb/sth or leave sb/sth behind", pos: "phrase", def: "Forget or abandon" },
+            { id: 611, category: "Section E-Z", word: "let out sb/sth or let sb/sth out", pos: "phrase", def: "Release or emit" },
+            { id: 612, category: "Section E-Z", word: "let sb/sth in / past / through, etc", pos: "phrase", def: "Allow entry or passage" },
+            { id: 613, category: "Section E-Z", word: "light", pos: "v", def: "Ignite" },
+            { id: 614, category: "Section E-Z", word: "lightly", pos: "adv", def: "Gently or with little weight" }
+        ];
+
+        // App State
+        let state = {
+            allWords: vocabularyData,
+            filteredWords: [...vocabularyData],
+            currentIndex: 0,
+            isFlipped: false,
+            filterCategory: 'all',
+            filterMode: 'all',
+            viewMode: 'card',
+            searchQuery: '',
+            masteredIds: new Set(JSON.parse(localStorage.getItem('lexicon_mastered_ids') || '[]'))
+        };
+
+        // Cloud sync bridge (used by the Firebase module below).
+        window.flashitGetProgress = () => [...state.masteredIds];
+        window.flashitGetQuizStats = () => JSON.parse(localStorage.getItem('flashit_quiz_stats') || '{"correct":0,"wrong":0}');
+        window.flashitApplyCloudQuizStats = (stats) => {
+            const safe = stats && typeof stats === 'object' ? stats : {};
+            const next = { correct: Math.max(0, Number(safe.correct) || 0), wrong: Math.max(0, Number(safe.wrong) || 0) };
+            localStorage.setItem('flashit_quiz_stats', JSON.stringify(next));
+            document.getElementById('quizCorrect').textContent = next.correct;
+            document.getElementById('quizWrong').textContent = next.wrong;
+            const total = next.correct + next.wrong;
+            document.getElementById('quizAccuracy').textContent = `${total ? Math.round(next.correct / total * 100) : 0}%`;
+        };
+        window.flashitApplyCloudProgress = (ids) => {
+            state.masteredIds = new Set((Array.isArray(ids) ? ids : []).map(Number));
+            localStorage.setItem('lexicon_mastered_ids', JSON.stringify([...state.masteredIds]));
+            filterWords();
+        };
+        window.flashitProgressChanged = () => {
+            window.dispatchEvent(new CustomEvent('flashit-progress-change', {
+                detail: { masteredIds: [...state.masteredIds] }
+            }));
+        };
+
+        // Selectors
+        const categorySelect = document.getElementById('categorySelect');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const cardViewBtn = document.getElementById('cardViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        const flashcardSection = document.getElementById('flashcardSection');
+        const listViewSection = document.getElementById('listViewSection');
+        const emptyState = document.getElementById('emptyState');
+        const cardWrapper = document.getElementById('cardWrapper');
+        const cardInner = document.getElementById('cardInner');
+        const cardPosFront = document.getElementById('cardPosFront');
+        const cardWordFront = document.getElementById('cardWordFront');
+        const cardPosBack = document.getElementById('cardPosBack');
+        const cardWordBack = document.getElementById('cardWordBack');
+        const cardDefBack = document.getElementById('cardDefBack');
+        const cardCounter = document.getElementById('cardCounter');
+        const prevCardBtn = document.getElementById('prevCardBtn');
+        const nextCardBtn = document.getElementById('nextCardBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const browseWordsBtn = document.getElementById('browseWordsBtn');
+        const speechBtnFront = document.getElementById('speechBtnFront');
+        const speechBtnBack = document.getElementById('speechBtnBack');
+        const masteryToggleFront = document.getElementById('masteryToggleFront');
+        const masteryToggleBack = document.getElementById('masteryToggleBack');
+        const masteryCountText = document.getElementById('masteryCountText');
+        const masteryPercentText = document.getElementById('masteryPercentText');
+        const progressBarInner = document.getElementById('progressBarInner');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const shortcutsModalBtn = document.getElementById('shortcutsModalBtn');
+        const shortcutsModal = document.getElementById('shortcutsModal');
+        const closeShortcutsBtn = document.getElementById('closeShortcutsBtn');
+
+        // Text To Speech
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Dark Mode
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        });
+
+        // Card Flip
+        function flipCard() {
+            if (state.filteredWords.length === 0) return;
+            state.isFlipped = !state.isFlipped;
+            if (state.isFlipped) {
+                cardInner.classList.add('rotate-y-180');
+            } else {
+                cardInner.classList.remove('rotate-y-180');
+            }
+        }
+
+        cardWrapper.addEventListener('click', (e) => {
+            if (e.target.closest('#speechBtnFront') || 
+                e.target.closest('#speechBtnBack') || 
+                e.target.closest('#masteryToggleFront') || 
+                e.target.closest('#masteryToggleBack')) {
+                return;
+            }
+            flipCard();
+        });
+
+        // Speech events
+        speechBtnFront.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.filteredWords.length > 0) speakText(state.filteredWords[state.currentIndex].word);
+        });
+
+        speechBtnBack.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.filteredWords.length > 0) speakText(state.filteredWords[state.currentIndex].word);
+        });
+
+        // Mastery
+        function toggleCurrentMastery() {
+            if (state.filteredWords.length === 0) return;
+            const currentItem = state.filteredWords[state.currentIndex];
+            if (state.masteredIds.has(currentItem.id)) {
+                state.masteredIds.delete(currentItem.id);
+            } else {
+                state.masteredIds.add(currentItem.id);
+            }
+            localStorage.setItem('lexicon_mastered_ids', JSON.stringify([...state.masteredIds]));
+            window.flashitProgressChanged();
+            
+            if (state.filterMode !== 'all') {
+                filterWords();
+            } else {
+                renderCurrentView();
+            }
+        }
+
+        masteryToggleFront.addEventListener('click', (e) => { e.stopPropagation(); toggleCurrentMastery(); });
+        masteryToggleBack.addEventListener('click', (e) => { e.stopPropagation(); toggleCurrentMastery(); });
+
+        // Navigation
+        function nextCard() {
+            if (state.filteredWords.length === 0) return;
+            state.isFlipped = false;
+            cardInner.classList.remove('rotate-y-180');
+            state.currentIndex = (state.currentIndex + 1) % state.filteredWords.length;
+            renderCurrentCard();
+        }
+
+        function prevCard() {
+            if (state.filteredWords.length === 0) return;
+            state.isFlipped = false;
+            cardInner.classList.remove('rotate-y-180');
+            state.currentIndex = (state.currentIndex - 1 + state.filteredWords.length) % state.filteredWords.length;
+            renderCurrentCard();
+        }
+
+        prevCardBtn.addEventListener('click', prevCard);
+        nextCardBtn.addEventListener('click', nextCard);
+
+        // Shuffle
+        shuffleBtn.addEventListener('click', () => {
+            for (let i = state.filteredWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [state.filteredWords[i], state.filteredWords[j]] = [state.filteredWords[j], state.filteredWords[i]];
+            }
+            state.currentIndex = 0;
+            state.isFlipped = false;
+            cardInner.classList.remove('rotate-y-180');
+            renderCurrentView();
+        });
+
+        // Touch Swipe Gestures for Mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        cardWrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        cardWrapper.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) {
+                nextCard();
+            } else if (touchEndX - touchStartX > 50) {
+                prevCard();
+            }
+        }, { passive: true });
+
+        // Search
+        searchInput.addEventListener('input', (e) => {
+            state.searchQuery = e.target.value.trim();
+            if (state.searchQuery.length > 0) {
+                clearSearchBtn.classList.remove('hidden');
+            } else {
+                clearSearchBtn.classList.add('hidden');
+            }
+            filterWords();
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            state.searchQuery = '';
+            clearSearchBtn.classList.add('hidden');
+            filterWords();
+        });
+
+        // Category Filter Listener
+        categorySelect.addEventListener('change', (e) => {
+            state.filterCategory = e.target.value;
+            filterWords();
+        });
+
+        function filterWords() {
+            state.filteredWords = state.allWords.filter(item => {
+                const isMastered = state.masteredIds.has(item.id);
+                
+                if (state.filterCategory !== 'all' && item.category !== state.filterCategory) return false;
+                if (state.filterMode === 'learning' && isMastered) return false;
+                if (state.filterMode === 'mastered' && !isMastered) return false;
+                
+                if (state.searchQuery) {
+                    const q = state.searchQuery.toLowerCase();
+                    const searchable = `${item.word} ${item.def} ${item.pos} ${item.category}`.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+                    const normalizedQuery = q.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+                    return normalizedQuery.split(/\\s+/).every(term => searchable.includes(term));
+                }
+                
+                return true;
+            });
+
+            state.currentIndex = 0;
+            state.isFlipped = false;
+            renderCurrentView();
+        }
+
+        // Render Utilities
+        function updateProgress() {
+            const total = state.allWords.length;
+            const masteredCount = state.masteredIds.size;
+            const percent = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
+
+            masteryCountText.textContent = `${masteredCount} / ${total} Mastered`;
+            masteryPercentText.textContent = `${percent}%`;
+            progressBarInner.style.width = `${percent}%`;
+        }
+
+        function renderCurrentCard() {
+            if (state.filteredWords.length === 0) return;
+
+            const currentItem = state.filteredWords[state.currentIndex];
+            const isMastered = state.masteredIds.has(currentItem.id);
+
+            cardPosFront.textContent = currentItem.pos;
+            cardWordFront.textContent = currentItem.word;
+
+            cardPosBack.textContent = currentItem.pos;
+            cardWordBack.textContent = currentItem.word;
+            cardDefBack.textContent = currentItem.def;
+
+            cardCounter.textContent = `${state.currentIndex + 1} of ${state.filteredWords.length}`;
+
+            if (isMastered) {
+                masteryToggleFront.classList.add('text-ios-green');
+                masteryToggleFront.classList.remove('text-slate-300', 'dark:text-slate-700');
+                masteryToggleBack.classList.add('text-ios-green');
+                masteryToggleBack.classList.remove('text-slate-600');
+            } else {
+                masteryToggleFront.classList.remove('text-ios-green');
+                masteryToggleFront.classList.add('text-slate-300', 'dark:text-slate-700');
+                masteryToggleBack.classList.remove('text-ios-green');
+                masteryToggleBack.classList.add('text-slate-600');
+            }
+        }
+
+        function renderGridList() {
+            listViewSection.innerHTML = '';
+            
+            state.filteredWords.forEach((item, idx) => {
+                const isMastered = state.masteredIds.has(item.id);
+                const cardEl = document.createElement('div');
+                cardEl.className = `p-4 rounded-2xl transition-all ${
+                    isMastered 
+                        ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border border-emerald-500/30' 
+                        : 'bg-white dark:bg-ios-cardDark border border-slate-200/50 dark:border-slate-800'
+                } shadow-sm flex flex-col gap-2`;
+
+                cardEl.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-ios-gray6 dark:bg-slate-800 text-ios-blue">
+                                ${item.pos}
+                            </span>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">${item.word}</h3>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button data-action="speech" data-word="${item.word}" class="p-1 text-ios-blue rounded-full">
+                                <i data-lucide="volume-2" class="w-4 h-4"></i>
+                            </button>
+                            <button data-action="mastery" data-id="${item.id}" class="p-1 ${isMastered ? 'text-ios-green' : 'text-slate-300 dark:text-slate-700'}">
+                                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                        ${item.def}
+                    </p>
+                `;
+
+                listViewSection.appendChild(cardEl);
+            });
+
+            lucide.createIcons();
+
+            listViewSection.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const action = btn.dataset.action;
+                    if (action === 'speech') {
+                        speakText(btn.dataset.word);
+                    } else if (action === 'mastery') {
+                        const id = parseInt(btn.dataset.id);
+                        if (state.masteredIds.has(id)) {
+                            state.masteredIds.delete(id);
+                        } else {
+                            state.masteredIds.add(id);
+                        }
+                        localStorage.setItem('lexicon_mastered_ids', JSON.stringify([...state.masteredIds]));
+            window.flashitProgressChanged();
+                        filterWords();
+                    }
+                });
+            });
+        }
+
+        function renderCurrentView() {
+            if (!quizMode) {
+                quizSection.classList.add('hidden');
+                quizLaunchWrap.classList.remove('hidden');
+            }
+            updateProgress();
+
+            if (state.filteredWords.length === 0) {
+                flashcardSection.classList.add('hidden');
+                listViewSection.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            if (state.viewMode === 'card') {
+                flashcardSection.classList.remove('hidden');
+                listViewSection.classList.add('hidden');
+                renderCurrentCard();
+            } else {
+                flashcardSection.classList.add('hidden');
+                listViewSection.classList.remove('hidden');
+                renderGridList();
+            }
+        }
+
+        // Segmented Control Filters
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-white', 'dark:bg-ios-cardDark', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                });
+                btn.classList.add('bg-white', 'dark:bg-ios-cardDark', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                state.filterMode = btn.dataset.filter;
+                filterWords();
+            });
+        });
+
+        // View Switcher (Bottom Nav)
+        cardViewBtn.addEventListener('click', () => {
+            state.viewMode = 'card';
+            document.body.classList.add('study-mode');
+            cardViewBtn.classList.replace('text-ios-gray', 'text-ios-blue');
+            listViewBtn.classList.replace('text-ios-blue', 'text-ios-gray');
+            renderCurrentView();
+        });
+
+        listViewBtn.addEventListener('click', () => {
+            state.viewMode = 'list';
+            document.body.classList.remove('study-mode');
+            listViewBtn.classList.replace('text-ios-gray', 'text-ios-blue');
+            cardViewBtn.classList.replace('text-ios-blue', 'text-ios-gray');
+            renderCurrentView();
+        });
+
+        browseWordsBtn.addEventListener('click', () => listViewBtn.click());
+
+        // Info Modal
+        shortcutsModalBtn.addEventListener('click', () => shortcutsModal.classList.remove('hidden'));
+        closeShortcutsBtn.addEventListener('click', () => shortcutsModal.classList.add('hidden'));
+
+        // Keyboard Event Navigation
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement === searchInput) return;
+
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+                e.preventDefault();
+                if (state.viewMode === 'card') flipCard();
+            } else if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                if (state.viewMode === 'card') nextCard();
+            } else if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                if (state.viewMode === 'card') prevCard();
+            } else if (e.code === 'KeyM') {
+                e.preventDefault();
+                toggleCurrentMastery();
+            }
+        });
+
+
+        // Quiz mode: multiple-choice questions built from the current filtered vocabulary.
+        const quizSection = document.getElementById('quizSection');
+        const quizLaunchWrap = document.getElementById('quizLaunchWrap');
+        const quizAnswers = document.getElementById('quizAnswers');
+        const quizWord = document.getElementById('quizWord');
+        const quizFeedback = document.getElementById('quizFeedback');
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+        const quizStatsKey = 'flashit_quiz_stats';
+        let quizStats = JSON.parse(localStorage.getItem(quizStatsKey) || '{"correct":0,"wrong":0}');
+        let quizDeck = [];
+        let quizIndex = 0;
+        let quizAnswered = false;
+        let quizMode = false;
+
+        function saveQuizStats() {
+            localStorage.setItem(quizStatsKey, JSON.stringify(quizStats));
+            renderQuizStats();
+            window.dispatchEvent(new CustomEvent('flashit-quiz-stats-change', { detail: { quizStats } }));
+        }
+        function renderQuizStats() {
+            document.getElementById('quizCorrect').textContent = quizStats.correct;
+            document.getElementById('quizWrong').textContent = quizStats.wrong;
+            const total = quizStats.correct + quizStats.wrong;
+            document.getElementById('quizAccuracy').textContent = `${total ? Math.round(quizStats.correct / total * 100) : 0}%`;
+        }
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+        function startQuiz() {
+            const pool = state.filteredWords.length ? state.filteredWords : state.allWords;
+            if (pool.length < 2) {
+                alert('You need at least two vocabulary words to start a quiz.');
+                return;
+            }
+            quizMode = true;
+            quizDeck = shuffleArray(pool);
+            quizIndex = 0;
+            flashcardSection.classList.add('hidden');
+            listViewSection.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            quizLaunchWrap.classList.add('hidden');
+            quizSection.classList.remove('hidden');
+            document.body.classList.remove('study-mode');
+            renderQuizStats();
+            renderQuizQuestion();
+            lucide.createIcons();
+        }
+        function renderQuizQuestion() {
+            if (!quizDeck.length) return;
+            const item = quizDeck[quizIndex % quizDeck.length];
+            quizAnswered = false;
+            quizWord.textContent = item.word;
+            document.getElementById('quizQuestionCount').textContent = `Question ${quizIndex + 1} of ${quizDeck.length}`;
+            quizFeedback.textContent = '';
+            quizFeedback.className = 'mt-4 min-h-6 text-sm font-semibold';
+            nextQuestionBtn.disabled = true;
+            const distractors = shuffleArray(state.allWords.filter(w => w.id !== item.id)).slice(0, 2);
+            const options = shuffleArray([item, ...distractors]);
+            quizAnswers.innerHTML = '';
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = option.def;
+                button.addEventListener('click', () => {
+                    if (quizAnswered) return;
+                    quizAnswered = true;
+                    const correct = option.id === item.id;
+                    if (correct) {
+                        quizStats.correct++;
+                        quizFeedback.textContent = 'Correct! Great work.';
+                        quizFeedback.classList.add('text-emerald-600');
+                    } else {
+                        quizStats.wrong++;
+                        quizFeedback.textContent = `Not quite. Correct answer: ${item.def}`;
+                        quizFeedback.classList.add('text-rose-600');
+                    }
+                    [...quizAnswers.children].forEach((answerButton, i) => {
+                        answerButton.disabled = true;
+                        if (options[i].id === item.id) answerButton.classList.add('quiz-correct');
+                        else if (options[i].id === option.id && !correct) answerButton.classList.add('quiz-incorrect');
+                    });
+                    saveQuizStats();
+                    nextQuestionBtn.disabled = false;
+                });
+                quizAnswers.appendChild(button);
+            });
+        }
+        function exitQuiz() {
+            quizMode = false;
+            quizSection.classList.add('hidden');
+            quizLaunchWrap.classList.remove('hidden');
+            renderCurrentView();
+            if (state.viewMode === 'card') document.body.classList.add('study-mode');
+        }
+        document.getElementById('startQuizBtn').addEventListener('click', startQuiz);
+        document.getElementById('exitQuizBtn').addEventListener('click', exitQuiz);
+        document.getElementById('restartQuizBtn').addEventListener('click', () => {
+            quizStats = { correct: 0, wrong: 0 };
+            saveQuizStats();
+            startQuiz();
+        });
+        nextQuestionBtn.addEventListener('click', () => {
+            if (!quizAnswered) return;
+            quizIndex++;
+            renderQuizQuestion();
+        });
+        renderQuizStats();
+
+        window.onload = function() {
+            document.body.classList.add('study-mode');
+            lucide.createIcons();
+            filterWords();
+        };
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import {
+            getAuth, GoogleAuthProvider, signInWithPopup, signOut,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import {
+            getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAbBaBAHgND7sCBlx5XtGZ8h8uiawWlf7U",
+            authDomain: "findyourip-a21e5.firebaseapp.com",
+            projectId: "findyourip-a21e5",
+            storageBucket: "findyourip-a21e5.firebasestorage.app",
+            messagingSenderId: "45346934186",
+            appId: "1:45346934186:web:07d15b133485842dde6fd3",
+            measurementId: "G-H7H8VZCTF2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        const authBtn = document.getElementById("firebaseAuthBtn");
+        const statusText = document.getElementById("firebaseStatus");
+
+        let activeProgressRef = null;
+        let unsubscribeProgress = null;
+        let saveQueue = Promise.resolve();
+        let applyingCloudData = false;
+
+        function setStatus(message) {
+            statusText.textContent = message;
+        }
+
+        function progressRef(user) {
+            return doc(db, "users", user.uid, "progress", "flashit");
+        }
+
+        async function loadInitialProgress(ref) {
+            const snapshot = await getDoc(ref);
+            if (snapshot.exists()) {
+                const data = snapshot.data();
+                applyingCloudData = true;
+                window.flashitApplyCloudProgress(data.masteredIds || []);
+                if (data.quizStats) window.flashitApplyCloudQuizStats(data.quizStats);
+                applyingCloudData = false;
+            } else {
+                await setDoc(ref, {
+                    masteredIds: window.flashitGetProgress(),
+                    quizStats: window.flashitGetQuizStats(),
+                    updatedAt: serverTimestamp()
+                });
+            }
+        }
+
+        function saveProgress(masteredIds) {
+            if (!activeProgressRef || applyingCloudData) return;
+            const ids = [...new Set(masteredIds.map(Number))];
+            saveQueue = saveQueue
+                .then(() => setDoc(activeProgressRef, {
+                    masteredIds: ids,
+                    quizStats: window.flashitGetQuizStats(),
+                    updatedAt: serverTimestamp()
+                }, { merge: true }))
+                .then(() => setStatus("Synced"))
+                .catch((error) => {
+                    console.error("Firebase save failed:", error);
+                    setStatus("Save failed");
+                });
+        }
+
+        window.addEventListener("flashit-progress-change", (event) => {
+            saveProgress(event.detail.masteredIds);
+        });
+        window.addEventListener("flashit-quiz-stats-change", () => {
+            if (!activeProgressRef || applyingCloudData) return;
+            saveProgress(window.flashitGetProgress());
+        });
+
+        authBtn.addEventListener("click", async () => {
+            try {
+                if (auth.currentUser) {
+                    await signOut(auth);
+                } else {
+                    await signInWithPopup(auth, provider);
+                }
+            } catch (error) {
+                console.error("Firebase sign-in error:", error);
+                setStatus(error.code === "auth/unauthorized-domain"
+                    ? "Add this domain in Firebase"
+                    : "Sign-in failed");
+                alert("Firebase sign-in failed: " + error.message);
+            }
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (unsubscribeProgress) {
+                unsubscribeProgress();
+                unsubscribeProgress = null;
+            }
+            activeProgressRef = null;
+
+            if (!user) {
+                authBtn.textContent = "Sign in to sync";
+                setStatus("Cloud not connected");
+                return;
+            }
+
+            authBtn.textContent = "Sign out";
+            setStatus("Loading cloud...");
+            activeProgressRef = progressRef(user);
+
+            try {
+                await loadInitialProgress(activeProgressRef);
+                unsubscribeProgress = onSnapshot(activeProgressRef, (snapshot) => {
+                    if (!snapshot.exists()) return;
+                    const data = snapshot.data();
+                    if (data.quizStats) window.flashitApplyCloudQuizStats(data.quizStats);
+                    const cloudIds = Array.isArray(data.masteredIds) ? data.masteredIds : [];
+                    const localIds = window.flashitGetProgress();
+                    const same = cloudIds.length === localIds.length &&
+                        cloudIds.every(id => localIds.includes(Number(id)));
+                    if (!same) {
+                        applyingCloudData = true;
+                        window.flashitApplyCloudProgress(cloudIds);
+                        applyingCloudData = false;
+                    }
+                    setStatus("Synced");
+                }, (error) => {
+                    console.error("Firebase listener failed:", error);
+                    setStatus("Sync error");
+                });
+            } catch (error) {
+                console.error("Firebase load failed:", error);
+                setStatus("Database setup needed");
+                alert("Could not load cloud progress. Check that Firestore is created and its security rules are set. Details: " + error.message);
+            }
+        });
+    </script>
+
+</body>
+</html>
